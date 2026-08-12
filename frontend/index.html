@@ -534,10 +534,24 @@ function renderPopupChart(forecast) {
   });
 }
 
+// ── Fetch with timeout ───────────────────────────────────
+async function fetchWithTimeout(url, timeoutMs = 60000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    clearTimeout(id);
+    throw e;
+  }
+}
+
 // ── 主要資料載入 ──────────────────────────────────────────
 async function loadRiskMap() {
-  const res  = await fetch(`${API_BASE}/api/risk-map`);
-  const data = await res.json();
+  const data = await fetchWithTimeout(`${API_BASE}/api/risk-map`);
 
   // 更新 header 計數
   const meta = data.meta || {};
@@ -553,15 +567,15 @@ async function loadRiskMap() {
 
     // 點擊：開啟彈窗 + 載入詳情
     marker.on('click', async () => {
-      const detailRes = await fetch(`${API_BASE}/api/community/${encodeURIComponent(props.station_id)}`);
-      const detail    = await detailRes.json();
-
-      const popup = L.popup({ maxWidth: 320, closeButton: true })
-        .setContent(makePopupContent(props, detail));
-      marker.bindPopup(popup).openPopup();
-
-      // Chart.js 需要等 DOM 插入後才能 render
-      setTimeout(() => renderPopupChart(detail.forecast_48h), 80);
+      try {
+        const detail = await fetchWithTimeout(`${API_BASE}/api/community/${encodeURIComponent(props.station_id)}`);
+        const popup = L.popup({ maxWidth: 320, closeButton: true })
+          .setContent(makePopupContent(props, detail));
+        marker.bindPopup(popup).openPopup();
+        setTimeout(() => renderPopupChart(detail.forecast_48h), 80);
+      } catch (e) {
+        console.error('Community fetch failed:', e);
+      }
     });
 
     // hover tooltip
@@ -576,8 +590,7 @@ async function loadRiskMap() {
 }
 
 async function loadAlerts() {
-  const res  = await fetch(`${API_BASE}/api/alerts`);
-  const data = await res.json();
+  const data = await fetchWithTimeout(`${API_BASE}/api/alerts`);
   const list = document.getElementById('alert-list');
   const cnt  = document.getElementById('sidebar-count');
 
@@ -623,19 +636,48 @@ document.getElementById('fab-alert').addEventListener('click', openSidebar);
 document.getElementById('overlay').addEventListener('click', closeSidebar);
 
 // ── 初始化 ────────────────────────────────────────────────
+function setLoadingText(msg) {
+  const el = document.querySelector('#loading p');
+  if (el) el.textContent = msg;
+}
+
+function hideLoading() {
+  const loading = document.getElementById('loading');
+  if (!loading) return;
+  loading.style.opacity = '0';
+  setTimeout(() => loading.style.display = 'none', 400);
+}
+
+function showError(msg) {
+  const list = document.getElementById('alert-list');
+  const cnt  = document.getElementById('sidebar-count');
+  if (list) list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>${msg}</div>`;
+  if (cnt)  cnt.textContent = '載入失敗';
+}
+
 (async function init() {
   initMap();
+
+  // Step 1：喚醒後端（Render 免費方案冷啟動需 30-60 秒）
+  setLoadingText('連線中，首次載入需喚醒伺服器（約 30 秒）…');
+  try {
+    await fetchWithTimeout(`${API_BASE}/healthz`, 70000);
+  } catch (e) {
+    hideLoading();
+    showError('無法連接伺服器，請稍後再試<br/><small style="opacity:.6">Render 可能正在冷啟動，請等候 30 秒後重新整理</small>');
+    return;
+  }
+
+  // Step 2：載入地圖與告警資料
+  setLoadingText('伺服器已就緒，載入風險地圖…');
   try {
     await Promise.all([loadRiskMap(), loadAlerts()]);
   } catch (e) {
     console.error('載入失敗:', e);
-    document.getElementById('alert-list').innerHTML =
-      `<div class="empty-state"><div class="empty-icon">⚠️</div>無法連接 API<br/>請確認後端已啟動</div>`;
+    showError('資料載入失敗，請重新整理頁面<br/><small style="opacity:.6">' + e.message + '</small>');
   }
-  // 隱藏載入畫面
-  const loading = document.getElementById('loading');
-  loading.style.opacity = '0';
-  setTimeout(() => loading.style.display = 'none', 400);
+
+  hideLoading();
 })();
 </script>
 </body>
