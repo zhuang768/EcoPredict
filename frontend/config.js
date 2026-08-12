@@ -8,7 +8,7 @@
  *   https://ecopredict-api.onrender.com
  */
 (function () {
-  const PROD_API = 'https://ecopredict-api.onrender.com'; // ← 部署後換成實際 URL
+  const PROD_API = 'https://ecopredict-kpvw.onrender.com'; // ← 部署後換成實際 URL
   const DEV_API  = 'http://127.0.0.1:8000';
 
   const isLocal = (
