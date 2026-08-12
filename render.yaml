@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: ecopredict-api
+    runtime: python
+    region: singapore        # 選最近的區域；可換 oregon / frankfurt
+    plan: free
+
+    rootDir: .               # repo 根目錄即為部署根目錄
+
+    buildCommand: |
+      pip install -r requirements.txt
+      # 預先跑一次資料抓取與特徵工程，讓模型在啟動時能直接讀 CSV
+      # （若 CWA_API_TOKEN 已設定，才執行；否則跳過，讓服務用既有資料）
+      if [ -n "$CWA_API_TOKEN" ]; then
+        python src/data_fetcher.py && python src/feature_engineering.py && python src/model_train.py
+      fi
+
+    startCommand: >
+      gunicorn -w 2 -k uvicorn.workers.UvicornWorker
+      --bind 0.0.0.0:$PORT
+      --timeout 120
+      --log-level info
+      api.api_server:app
+
+    healthCheckPath: /healthz   # Render 用此路由確認服務已啟動
+
+    envVars:
+      # ── 必填（在 Render Dashboard → Environment 設定，不要寫進這個檔案）──
+      - key: CWA_API_TOKEN
+        sync: false              # 標記為 secret，不 sync 進 repo
+
+      # ── 選填 ──
+      - key: CORS_ALLOW_ORIGINS
+        # 部署後改成實際的 Cloudflare Pages 網址，例如：
+        # https://ecopredict.pages.dev,https://ecopredict-xxx.pages.dev
+        value: "*"
+
+      - key: PORT
+        value: "8000"            # Render 會自動覆蓋此值
+
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+    disk:
+      name: ecopredict-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1                  # 免費方案限 1GB

@@ -1,0 +1,23 @@
+# Environment
+.env
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+
+# Data (raw data excluded from repo)
+data/raw/
+data/processed/
+
+# Models
+models/*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

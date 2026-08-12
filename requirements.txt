@@ -1,0 +1,25 @@
+# EcoPredict dependencies
+# ──────────────────────────────────────────────────────────
+
+# Data & ML
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+joblib==1.4.2
+shap
+matplotlib
+
+# HTTP / API Client
+requests==2.32.3
+
+# API Server（FastAPI）
+fastapi==0.111.1
+uvicorn[standard]==0.30.1
+gunicorn>=22.0.0          # Render 生產環境使用
+
+# Utilities
+python-dotenv==1.0.1
+tqdm==4.66.4
+
+# Testing
+pytest==8.2.2

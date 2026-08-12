@@ -1,0 +1,14 @@
+name = "ecopredict"
+
+# Cloudflare Pages 純靜態部署設定
+# ──────────────────────────────────────────────────────────────────────────────
+# 注意：這個 wrangler.toml 是給本地 `wrangler pages dev` 測試用。
+# 正式部署走 Cloudflare Pages Dashboard → GitHub 自動整合（見 README.md）。
+# ──────────────────────────────────────────────────────────────────────────────
+
+pages_build_output_dir = "frontend"   # 靜態前端的輸出目錄（無 build step）
+
+compatibility_date = "2024-01-01"
+
+# 本地開發模式：wrangler pages dev ./frontend --port 8080
+# 此時 config.js 的 isLocal 判斷為 true → API 指向 http://127.0.0.1:8000
