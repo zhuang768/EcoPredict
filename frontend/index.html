@@ -1,45 +1,53 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>EcoPredict｜微型氣候與洪災預測網</title>
-  <meta name="description" content="EcoPredict — 社區級洪災與土石流即時風險監測預測系統" />
+  <title>EcoPredict — Community Flood & Debris Flow Risk Monitor</title>
+  <meta name="description" content="EcoPredict — Real-time community-scale flood and debris flow risk prediction system using CWA open data and machine learning." />
 
   <!-- Leaflet.js -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- IBM Plex Sans + Mono — 儀器風格字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <!-- EcoPredict API 設定（必須在所有應用 JS 之前載入） -->
   <script src="config.js"></script>
 
   <style>
-    /* ── CSS 變數 ─────────────────────────────────────── */
+    /* ── CSS 設計語彙：水文儀器 / WMO 警戒配色 ───────────── */
     :root {
-      --bg:        #0b1120;
-      --surface:   #111827;
-      --surface2:  #1f2937;
-      --border:    rgba(255,255,255,0.08);
-      --text:      #f1f5f9;
-      --muted:     #94a3b8;
-      --accent:    #38bdf8;
+      /* 深海藍黑底色系 */
+      --bg:        #091522;
+      --surface:   #0f2133;
+      --surface2:  #1a3248;
+      --border:    #1e3d56;
+      --border-lt: rgba(74,155,190,0.15);
 
-      --c-low:      #22c55e;
-      --c-medium:   #eab308;
-      --c-high:     #f97316;
-      --c-critical: #ef4444;
+      /* 文字 */
+      --text:      #d4e8f0;
+      --muted:     #6a9ab5;
 
-      --sidebar-w: 340px;
-      --header-h:  58px;
+      /* 品牌色：雨量計刻度藍 */
+      --accent:    #4a9bbe;
+
+      /* WMO 四色警戒系統 */
+      --c-minor:    #3d9e6a;   /* Minor  — 平靜綠 */
+      --c-moderate: #c8a828;   /* Moderate — WMO 黃色警戒深化 */
+      --c-severe:   #c96830;   /* Severe — 洪水警戒橙 */
+      --c-extreme:  #c43030;   /* Extreme — 消防警報紅 */
+
+      --sidebar-w: 360px;
+      --header-h:  52px;
+      --gauge-w:   36px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'IBM Plex Sans', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
       height: 100dvh;
@@ -48,60 +56,65 @@
       overflow: hidden;
     }
 
-    /* ── 標題列 ───────────────────────────────────────── */
+    /* ── 標題列：儀器狀態列風格 ───────────────────────────── */
     header {
       height: var(--header-h);
       flex-shrink: 0;
-      background: linear-gradient(90deg, #0b1120 0%, #0f2440 60%, #0b1120 100%);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: 0 1.25rem;
-      gap: 0.75rem;
+      padding: 0 1rem;
+      gap: 1rem;
       z-index: 1000;
     }
 
-    .logo-icon {
-      width: 34px; height: 34px;
-      background: linear-gradient(135deg, #22c55e, #38bdf8);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; flex-shrink: 0;
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-shrink: 0;
     }
-
-    header h1 {
+    .brand-name {
+      font-family: 'IBM Plex Mono', monospace;
       font-size: 1rem;
-      font-weight: 700;
-      background: linear-gradient(90deg, #f1f5f9, #38bdf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .brand-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 300;
       white-space: nowrap;
     }
 
-    .header-stats {
+    /* 狀態列右側：氣象站資訊 */
+    .header-status {
       margin-left: auto;
       display: flex;
-      gap: 0.5rem;
-      flex-wrap: nowrap;
+      align-items: center;
+      gap: 1.5rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
     }
-
-    .stat-chip {
-      display: flex; align-items: center; gap: 5px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      white-space: nowrap;
+    .status-item { display: flex; align-items: center; gap: 0.35rem; }
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--c-minor);
     }
-    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .dot-critical { background: var(--c-critical); box-shadow: 0 0 6px var(--c-critical); }
-    .dot-high     { background: var(--c-high); }
-    .dot-medium   { background: var(--c-medium); }
-    .dot-low      { background: var(--c-low); }
+    .status-val { color: var(--text); font-weight: 500; }
 
-    /* ── 主體佈局 ─────────────────────────────────────── */
+    /* 告警計數 */
+    .alert-counts {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .ac { display: flex; align-items: center; gap: 3px; font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace; }
+    .ac-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
+
+    /* ── 主體佈局 ─────────────────────────────────────────── */
     main {
       flex: 1;
       display: flex;
@@ -109,96 +122,196 @@
       position: relative;
     }
 
-    /* ── 地圖 ─────────────────────────────────────────── */
+    /* ── 地圖 ─────────────────────────────────────────────── */
     #map {
       flex: 1;
       min-width: 0;
-      background: #0b1120;
+      background: var(--bg);
     }
 
-    /* Leaflet 黑色主題覆蓋 */
-    .leaflet-container { background: #0f172a !important; }
+    /* Leaflet 主題覆蓋 */
+    .leaflet-container { background: #091522 !important; }
     .leaflet-popup-content-wrapper {
-      background: #1e293b !important;
-      border: 1px solid rgba(56,189,248,0.25) !important;
-      border-radius: 14px !important;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
+      background: #0f2133 !important;
+      border: 1px solid var(--border-lt) !important;
+      border-radius: 4px !important;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.7) !important;
       color: var(--text) !important;
       padding: 0 !important;
       min-width: 280px;
       max-width: 320px;
     }
-    .leaflet-popup-tip { background: #1e293b !important; }
+    .leaflet-popup-tip { background: #0f2133 !important; }
     .leaflet-popup-content { margin: 0 !important; padding: 0 !important; width: auto !important; }
-    .leaflet-popup-close-button { color: var(--muted) !important; font-size: 18px !important; top: 10px !important; right: 12px !important; }
+    .leaflet-popup-close-button {
+      color: var(--muted) !important;
+      font-size: 18px !important;
+      top: 8px !important; right: 10px !important;
+    }
+    .leaflet-control-zoom a {
+      background: var(--surface2) !important;
+      border-color: var(--border) !important;
+      color: var(--text) !important;
+    }
 
-    /* ── 彈窗卡片 ─────────────────────────────────────── */
-    .popup-card { padding: 1rem 1.1rem 1rem; }
+    /* Pulse ring 動畫：只用於 EXTREME 標記 */
+    @keyframes pulse-ring {
+      0%   { stroke-opacity: 0.8; r: 10; }
+      100% { stroke-opacity: 0;   r: 22; }
+    }
+    .pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+
+    /* ── 彈窗卡片 ─────────────────────────────────────────── */
+    .popup-card {
+      padding: 0.9rem 1rem 0.9rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
 
     .popup-header {
-      display: flex; align-items: flex-start; gap: 0.5rem;
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 0.5rem;
       margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
     }
+    .popup-name {
+      font-size: 0.95rem; font-weight: 600; line-height: 1.3;
+    }
+    .popup-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem; color: var(--muted); margin-top: 2px;
+    }
+    .popup-sub { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+
+    /* WMO 徽章：色條 + 文字，無背景色塊 */
     .risk-badge {
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.05em;
+      padding: 2px 8px;
+      border-left: 3px solid;
       flex-shrink: 0;
       margin-top: 2px;
     }
-    .badge-LOW      { background: rgba(34,197,94,0.15); color: var(--c-low); border: 1px solid var(--c-low); }
-    .badge-MEDIUM   { background: rgba(234,179,8,0.15);  color: var(--c-medium); border: 1px solid var(--c-medium); }
-    .badge-HIGH     { background: rgba(249,115,22,0.15); color: var(--c-high); border: 1px solid var(--c-high); }
-    .badge-CRITICAL { background: rgba(239,68,68,0.15);  color: var(--c-critical); border: 1px solid var(--c-critical); }
+    .badge-LOW,     .badge-MINOR    { border-color: var(--c-minor);    color: var(--c-minor);    background: rgba(61,158,106,0.08); }
+    .badge-MEDIUM,  .badge-MODERATE { border-color: var(--c-moderate); color: var(--c-moderate); background: rgba(200,168,40,0.08); }
+    .badge-HIGH,    .badge-SEVERE   { border-color: var(--c-severe);   color: var(--c-severe);   background: rgba(201,104,48,0.08); }
+    .badge-CRITICAL,.badge-EXTREME  { border-color: var(--c-extreme);  color: var(--c-extreme);  background: rgba(196,48,48,0.08); }
 
-    .popup-name { font-size: 1rem; font-weight: 700; line-height: 1.3; }
-    .popup-sub  { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
-
-    .popup-metrics {
+    /* 雨量讀值：儀器風格，Mono 字體 */
+    .popup-readings {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 0.4rem;
+      gap: 1px;
       margin-bottom: 0.75rem;
+      background: var(--border);
+      border: 1px solid var(--border);
     }
-    .metric-box {
-      background: rgba(255,255,255,0.04);
-      border-radius: 8px;
-      padding: 6px 8px;
+    .reading-box {
+      background: var(--surface);
+      padding: 7px 6px 5px;
       text-align: center;
     }
-    .metric-val { font-size: 1rem; font-weight: 700; }
-    .metric-lbl { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
+    .reading-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem; font-weight: 500;
+    }
+    .reading-lbl {
+      font-size: 0.58rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
 
-    .chart-wrap { position: relative; height: 110px; margin-bottom: 0.5rem; }
-    .chart-title { font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .chart-label {
+      font-size: 0.62rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .chart-wrap { position: relative; height: 100px; margin-bottom: 0.6rem; }
 
     .popup-footer {
       display: flex; align-items: center; justify-content: space-between;
       border-top: 1px solid var(--border);
-      padding-top: 0.6rem;
-      font-size: 0.72rem;
+      padding-top: 0.55rem;
+      font-size: 0.68rem; color: var(--muted);
+    }
+    .risk-score-row { display: flex; align-items: center; gap: 5px; }
+    .score-bar { width: 56px; height: 3px; background: var(--surface2); }
+    .score-bar-fill { height: 100%; transition: width 0.4s ease; }
+    .care-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem; color: var(--accent);
+      border: 1px solid var(--border-lt);
+      padding: 2px 7px;
+    }
+
+    /* ── 側邊欄 ───────────────────────────────────────────── */
+    #sidebar-wrap {
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    /* 雨量刻度尺（簽名視覺元素） */
+    #rain-gauge {
+      width: var(--gauge-w);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.5rem 0 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .gauge-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.46rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      margin-bottom: 0.5rem;
+    }
+    .gauge-track {
+      flex: 1;
+      width: 6px;
+      background: var(--surface2);
+      position: relative;
+      border: 1px solid var(--border);
+    }
+    .gauge-fill {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, var(--c-extreme), var(--c-severe) 40%, var(--c-moderate) 70%, var(--c-minor));
+      transition: height 1s ease;
+    }
+    /* 刻度線 */
+    .gauge-tick {
+      position: absolute;
+      right: 100%;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .gauge-tick-line { width: 5px; height: 1px; background: var(--border); }
+    .gauge-tick-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.42rem;
       color: var(--muted);
     }
-    .care-badge {
-      background: rgba(56,189,248,0.1);
-      border: 1px solid rgba(56,189,248,0.3);
-      border-radius: 10px;
-      padding: 2px 8px;
+    .gauge-max-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.46rem;
       color: var(--accent);
-      font-weight: 600;
+      margin-top: 4px;
+      text-align: center;
     }
-    .score-bar-wrap { display: flex; align-items: center; gap: 6px; }
-    .score-bar { width: 60px; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
-    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
 
-    /* ── 側邊欄 ───────────────────────────────────────── */
     #sidebar {
       width: var(--sidebar-w);
-      flex-shrink: 0;
-      background: rgba(17,24,39,0.96);
-      backdrop-filter: blur(20px);
+      background: var(--surface);
       border-left: 1px solid var(--border);
       display: flex;
       flex-direction: column;
@@ -207,99 +320,126 @@
     }
 
     .sidebar-header {
-      padding: 1rem 1.25rem 0.75rem;
+      padding: 0.75rem 1rem 0.65rem;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-    .sidebar-header h2 {
-      font-size: 0.85rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--c-critical);
+    .sidebar-title-row {
       display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 4px;
     }
-    .pulse-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--c-critical);
-      animation: pulse 2s infinite;
+    .live-indicator {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--c-extreme);
+      animation: blink 2s ease-in-out infinite;
+      flex-shrink: 0;
     }
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
-      50%       { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .sidebar-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
     }
     .sidebar-count {
-      font-size: 0.72rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem;
       color: var(--muted);
-      margin-top: 3px;
     }
 
+    /* 告警清單：調度日誌格式 */
     .alert-list {
       flex: 1;
       overflow-y: auto;
-      padding: 0.5rem 0.75rem;
+      padding: 0;
     }
-    .alert-list::-webkit-scrollbar { width: 4px; }
+    .alert-list::-webkit-scrollbar { width: 3px; }
     .alert-list::-webkit-scrollbar-track { background: transparent; }
-    .alert-list::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+    .alert-list::-webkit-scrollbar-thumb { background: var(--surface2); }
 
     .alert-item {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid transparent;
-      border-radius: 10px;
-      padding: 0.65rem 0.75rem;
-      margin-bottom: 0.5rem;
+      border-left: 4px solid transparent;
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 0.85rem 0.55rem 0.7rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background 0.15s;
     }
-    .alert-item:hover {
-      background: var(--surface2);
-      transform: translateX(-2px);
-    }
-    .alert-item.level-CRITICAL { border-left-color: var(--c-critical); }
-    .alert-item.level-HIGH     { border-left-color: var(--c-high); }
+    .alert-item:hover { background: var(--surface2); }
 
-    .alert-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .alert-name { font-size: 0.82rem; font-weight: 600; }
-    .alert-score {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 8px;
+    .alert-item.level-CRITICAL,
+    .alert-item.level-EXTREME  { border-left-color: var(--c-extreme); }
+    .alert-item.level-HIGH,
+    .alert-item.level-SEVERE   { border-left-color: var(--c-severe); }
+    .alert-item.level-MEDIUM,
+    .alert-item.level-MODERATE { border-left-color: var(--c-moderate); }
+
+    /* 日誌行格式 */
+    .alert-row1 {
+      display: flex; align-items: baseline;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 2px;
     }
-    .score-critical { background: rgba(239,68,68,0.15); color: var(--c-critical); }
-    .score-high     { background: rgba(249,115,22,0.15); color: var(--c-high); }
-    .alert-meta { font-size: 0.7rem; color: var(--muted); }
-    .alert-rain { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+    .alert-level-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+    .tag-extreme  { color: var(--c-extreme); }
+    .tag-severe   { color: var(--c-severe); }
+    .tag-moderate { color: var(--c-moderate); }
+    .tag-minor    { color: var(--c-minor); }
+
+    .alert-name {
+      font-size: 0.82rem; font-weight: 500; flex: 1;
+    }
+    .alert-score {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem; font-weight: 500; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .alert-row2 {
+      font-size: 0.67rem; color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .alert-row3 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem; color: var(--muted);
+    }
 
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
+      line-height: 1.7;
     }
-    .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
 
-    /* ── 手機浮動按鈕 ─────────────────────────────────── */
+    /* ── 手機浮動按鈕 ─────────────────────────────────────── */
     #fab-alert {
       display: none;
       position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
+      bottom: 1.25rem;
+      right: 1.25rem;
       z-index: 2000;
-      background: var(--c-critical);
+      background: var(--c-extreme);
       color: white;
       border: none;
-      border-radius: 50%;
-      width: 56px; height: 56px;
-      font-size: 1.4rem;
+      border-radius: 2px;
+      width: 52px; height: 52px;
+      font-size: 1.25rem;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(239,68,68,0.5);
-      animation: pulse 2s infinite;
+      box-shadow: 0 4px 16px rgba(196,48,48,0.5);
     }
 
-    /* ── 手機側邊欄 overlay ───────────────────────────── */
     #overlay {
       display: none;
       position: fixed;
@@ -308,30 +448,47 @@
       z-index: 1500;
     }
 
-    /* ── 載入指示器 ───────────────────────────────────── */
+    /* ── 載入畫面：進度列風格 ───────────────────────────────── */
     #loading {
       position: fixed; inset: 0;
       background: var(--bg);
       display: flex; align-items: center; justify-content: center;
-      flex-direction: column; gap: 1rem;
+      flex-direction: column; gap: 1.25rem;
       z-index: 9999;
       transition: opacity 0.4s;
     }
-    .spinner {
-      width: 44px; height: 44px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .loading-brand {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--accent);
+      letter-spacing: 0.04em;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    #loading p { color: var(--muted); font-size: 0.85rem; }
+    .loading-bar-wrap {
+      width: 200px; height: 2px;
+      background: var(--surface2);
+    }
+    .loading-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      animation: loading-progress 4s ease-in-out infinite;
+    }
+    @keyframes loading-progress {
+      0%   { width: 0%;   opacity: 1; }
+      60%  { width: 75%;  opacity: 1; }
+      90%  { width: 90%;  opacity: 1; }
+      100% { width: 100%; opacity: 0; }
+    }
+    #loading-msg {
+      font-size: 0.75rem; color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+    }
 
-    /* ── 響應式 ───────────────────────────────────────── */
+    /* ── 響應式 ───────────────────────────────────────────── */
     @media (max-width: 768px) {
-      :root { --sidebar-w: 100%; }
-      header h1 { font-size: 0.85rem; }
-      .header-stats { display: none; }
+      .brand-sub { display: none; }
+      .header-status { display: none; }
+      #rain-gauge { display: none; }
 
       #sidebar {
         position: fixed;
@@ -341,70 +498,115 @@
         width: min(380px, 92vw);
         transform: translateX(100%);
         z-index: 1600;
-        border-left: 1px solid var(--border);
       }
       #sidebar.open { transform: translateX(0); }
-
       #fab-alert { display: flex; align-items: center; justify-content: center; }
       #overlay.visible { display: block; }
-      .popup-card { min-width: 240px; }
     }
   </style>
 </head>
 <body>
 
 <!-- 載入指示器 -->
-<div id="loading">
-  <div class="spinner"></div>
-  <p>EcoPredict 載入中…</p>
+<div id="loading" role="status" aria-live="polite" aria-label="Loading EcoPredict">
+  <div class="loading-brand">EcoPredict</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div id="loading-msg">Initializing…</div>
 </div>
 
 <!-- 標題列 -->
 <header>
-  <div class="logo-icon">🌊</div>
-  <h1>EcoPredict｜微型氣候與洪災預測網</h1>
-  <div class="header-stats" id="header-stats">
-    <div class="stat-chip"><span class="dot dot-critical"></span><span id="cnt-critical">0</span> 極高風險</div>
-    <div class="stat-chip"><span class="dot dot-high"></span><span id="cnt-high">0</span> 高風險</div>
-    <div class="stat-chip"><span class="dot dot-medium"></span><span id="cnt-medium">0</span> 中風險</div>
+  <div class="brand">
+    <span class="brand-name">EcoPredict</span>
+    <span class="brand-sub">Community Flood &amp; Debris Flow Risk Monitor</span>
+  </div>
+  <div class="header-status" id="header-stats" aria-label="Station risk summary">
+    <div class="alert-counts">
+      <div class="ac" aria-label="Extreme risk stations">
+        <div class="ac-dot" style="background:var(--c-extreme)"></div>
+        <span id="cnt-critical">—</span>&nbsp;Extreme
+      </div>
+      <div class="ac" aria-label="Severe risk stations">
+        <div class="ac-dot" style="background:var(--c-severe)"></div>
+        <span id="cnt-high">—</span>&nbsp;Severe
+      </div>
+      <div class="ac" aria-label="Moderate risk stations">
+        <div class="ac-dot" style="background:var(--c-moderate)"></div>
+        <span id="cnt-medium">—</span>&nbsp;Moderate
+      </div>
+    </div>
+    <div class="status-item">
+      <div class="status-dot"></div>
+      <span id="station-count" class="status-val">—</span>&nbsp;STA ACTIVE
+    </div>
+    <div class="status-item">
+      <span id="last-updated" class="status-val">—</span>&nbsp;UTC
+    </div>
   </div>
 </header>
 
 <main>
   <!-- 地圖 -->
-  <div id="map"></div>
+  <div id="map" role="application" aria-label="Taiwan flood risk map"></div>
 
-  <!-- 側邊欄 -->
-  <aside id="sidebar">
-    <div class="sidebar-header">
-      <h2><span class="pulse-dot"></span>即時告警清單</h2>
-      <div class="sidebar-count" id="sidebar-count">載入中…</div>
+  <div id="sidebar-wrap">
+    <!-- 雨量刻度尺（簽名視覺元素） -->
+    <div id="rain-gauge" aria-hidden="true">
+      <span class="gauge-label">3-Day Max</span>
+      <div class="gauge-track" id="gauge-track">
+        <div class="gauge-fill" id="gauge-fill" style="height:0%"></div>
+      </div>
+      <div class="gauge-max-label" id="gauge-max-val">—mm</div>
     </div>
-    <div class="alert-list" id="alert-list">
-      <div class="empty-state"><div class="empty-icon">⏳</div>載入中…</div>
-    </div>
-  </aside>
+
+    <!-- 側邊欄 -->
+    <aside id="sidebar" aria-label="Live alert list">
+      <div class="sidebar-header">
+        <div class="sidebar-title-row">
+          <div class="live-indicator" aria-hidden="true"></div>
+          <span class="sidebar-title">Live Alerts</span>
+        </div>
+        <div class="sidebar-count" id="sidebar-count">Loading…</div>
+      </div>
+      <div class="alert-list" id="alert-list" role="list">
+        <div class="empty-state"><div class="empty-icon">⏳</div>Connecting…</div>
+      </div>
+    </aside>
+  </div>
 </main>
 
-<!-- 手機 FAB 按鈕 -->
-<button id="fab-alert" aria-label="開啟告警清單">🚨</button>
-<div id="overlay"></div>
+<!-- 手機 FAB -->
+<button id="fab-alert" aria-label="Open alert list">🚨</button>
+<div id="overlay" aria-hidden="true"></div>
 
 <script>
 // ── 常數 ──────────────────────────────────────────────────
 // API_BASE 由 config.js 注入的 window.ECOPREDICT_API 決定
-// 本地開發 → http://127.0.0.1:8000
-// Cloudflare Pages → https://ecopredict-api.onrender.com
 const API_BASE = (typeof window.ECOPREDICT_API !== 'undefined')
   ? window.ECOPREDICT_API
-  : 'http://127.0.0.1:8000';  // fallback
-const RISK_COLORS = {
-  LOW:      '#22c55e',
-  MEDIUM:   '#eab308',
-  HIGH:     '#f97316',
-  CRITICAL: '#ef4444',
+  : 'http://127.0.0.1:8000';
+
+// WMO 四色警戒系統：API 回傳 LOW/MEDIUM/HIGH/CRITICAL，對應到 WMO 名稱
+const WMO_LABEL = {
+  LOW:      'MINOR',
+  MEDIUM:   'MODERATE',
+  HIGH:     'SEVERE',
+  CRITICAL: 'EXTREME',
 };
-const RISK_RADIUS = { LOW: 5, MEDIUM: 6, HIGH: 8, CRITICAL: 9 };
+const WMO_TAG_CLASS = {
+  LOW:      'tag-minor',
+  MEDIUM:   'tag-moderate',
+  HIGH:     'tag-severe',
+  CRITICAL: 'tag-extreme',
+};
+const RISK_COLORS = {
+  LOW:      '#3d9e6a',
+  MEDIUM:   '#c8a828',
+  HIGH:     '#c96830',
+  CRITICAL: '#c43030',
+};
+// 半徑對應風險等級
+const RISK_RADIUS = { LOW: 4, MEDIUM: 5.5, HIGH: 7.5, CRITICAL: 9 };
 
 let map, popupChart = null;
 
@@ -417,7 +619,7 @@ function initMap() {
     attributionControl: true,
   });
 
-  // 深色地圖圖磚（CartoDB Dark Matter）
+  // CartoDB Dark Matter
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/">OSM</a> © <a href="https://carto.com/">CARTO</a>',
     subdomains: 'abcd',
@@ -426,30 +628,36 @@ function initMap() {
 }
 
 // ── 顏色與樣式工具 ────────────────────────────────────────
-function riskColor(level) { return RISK_COLORS[level] || '#94a3b8'; }
-function riskRadius(level) { return RISK_RADIUS[level] || 5; }
+function riskColor(level) { return RISK_COLORS[level] || '#6a9ab5'; }
+function wmoLabel(level)  { return WMO_LABEL[level]   || level; }
+function wmoTagClass(level){ return WMO_TAG_CLASS[level] || 'tag-minor'; }
 
 function makeCircleMarker(feature) {
   const { risk_level } = feature.properties;
-  return L.circleMarker(
+  const color = riskColor(risk_level);
+  const r     = RISK_RADIUS[risk_level] || 4;
+  const isExtreme = risk_level === 'CRITICAL';
+
+  const marker = L.circleMarker(
     [feature.geometry.coordinates[1], feature.geometry.coordinates[0]],
     {
-      radius:      riskRadius(risk_level),
-      fillColor:   riskColor(risk_level),
-      color:       risk_level === 'CRITICAL' ? '#fff' : riskColor(risk_level),
-      weight:      risk_level === 'CRITICAL' ? 1.5 : 0.5,
+      radius:      r,
+      fillColor:   color,
+      color:       isExtreme ? '#fff' : color,
+      weight:      isExtreme ? 1 : 0.5,
       opacity:     1,
-      fillOpacity: risk_level === 'LOW' ? 0.55 : 0.85,
+      fillOpacity: risk_level === 'LOW' ? 0.5 : 0.82,
     }
   );
+  return marker;
 }
 
-// ── 彈窗內容 ──────────────────────────────────────────────
+// ── 彈窗內容（英文化，儀器風格） ──────────────────────────
 function makePopupContent(props, detail) {
   const level  = props.risk_level;
   const color  = riskColor(level);
+  const label  = wmoLabel(level);
   const scoreP = Math.round(props.risk_score * 100);
-
   const barFill = `background:${color}; width:${scoreP}%`;
 
   return `
@@ -457,39 +665,40 @@ function makePopupContent(props, detail) {
       <div class="popup-header">
         <div>
           <div class="popup-name">${props.station_name}</div>
-          <div class="popup-sub">${props.county} ${props.town} ・ 海拔 ${Math.round(props.altitude||0)} m</div>
+          <div class="popup-id">${props.station_id} · ALT ${Math.round(props.altitude||0)} m</div>
+          <div class="popup-sub">${props.county} / ${props.town}</div>
         </div>
-        <span class="risk-badge badge-${level}">${props.risk_label}</span>
+        <span class="risk-badge badge-${level}" aria-label="WMO risk level ${label}">${label}</span>
       </div>
 
-      <div class="popup-metrics">
-        <div class="metric-box">
-          <div class="metric-val" style="color:${color}">${props.rain_1h.toFixed(1)}</div>
-          <div class="metric-lbl">1h 雨量(mm)</div>
+      <div class="popup-readings">
+        <div class="reading-box">
+          <div class="reading-val" style="color:${color}">${props.rain_1h.toFixed(1)}</div>
+          <div class="reading-lbl">1 h (mm)</div>
         </div>
-        <div class="metric-box">
-          <div class="metric-val" style="color:${color}">${props.rain_24h.toFixed(1)}</div>
-          <div class="metric-lbl">24h 雨量(mm)</div>
+        <div class="reading-box">
+          <div class="reading-val" style="color:${color}">${props.rain_24h.toFixed(1)}</div>
+          <div class="reading-lbl">24 h (mm)</div>
         </div>
-        <div class="metric-box">
-          <div class="metric-val" style="color:${color}">${props.rain_3days.toFixed(1)}</div>
-          <div class="metric-lbl">3天 雨量(mm)</div>
+        <div class="reading-box">
+          <div class="reading-val" style="color:${color}">${props.rain_3days.toFixed(1)}</div>
+          <div class="reading-lbl">3-day (mm)</div>
         </div>
       </div>
 
-      <div class="chart-title">未來 48h 降雨機率預報 (%)</div>
+      <div class="chart-label">48 h Rainfall Probability Forecast (%)</div>
       <div class="chart-wrap">
-        <canvas id="popupChart" height="110"></canvas>
+        <canvas id="popupChart" height="100"></canvas>
       </div>
 
       <div class="popup-footer">
-        <div class="score-bar-wrap">
-          <span style="font-size:0.68rem">風險分數</span>
+        <div class="risk-score-row">
+          <span style="font-size:0.62rem">Risk score</span>
           <div class="score-bar"><div class="score-bar-fill" style="${barFill}"></div></div>
-          <span style="font-size:0.7rem; color:${color}; font-weight:700">${scoreP}%</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:${color}">${scoreP}%</span>
         </div>
-        <div class="care-badge">
-          👥 ${detail ? detail.vulnerable.county_total : '?'} 人
+        <div class="care-count" aria-label="Vulnerable persons in county: ${detail ? detail.vulnerable.county_total : '?'}">
+          &#x1F465; ${detail ? detail.vulnerable.county_total : '?'} at risk
         </div>
       </div>
     </div>`;
@@ -506,29 +715,29 @@ function renderPopupChart(forecast) {
       labels:   forecast.map(d => d.label),
       datasets: [{
         data:        forecast.map(d => d.pop),
-        borderColor: '#38bdf8',
-        backgroundColor: 'rgba(56,189,248,0.12)',
-        borderWidth: 2,
+        borderColor: '#4a9bbe',
+        backgroundColor: 'rgba(74,155,190,0.1)',
+        borderWidth: 1.5,
         pointRadius: 2,
-        tension: 0.4,
+        tension: 0.3,
         fill: true,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 300 },
+      animation: { duration: 200 },
       plugins: { legend: { display: false }, tooltip: {
         callbacks: { label: ctx => ` ${ctx.parsed.y}%` },
-        backgroundColor: '#1e293b',
-        titleColor: '#94a3b8',
-        bodyColor: '#f1f5f9',
-        borderColor: 'rgba(56,189,248,0.3)',
+        backgroundColor: '#0f2133',
+        titleColor: '#6a9ab5',
+        bodyColor: '#d4e8f0',
+        borderColor: '#1e3d56',
         borderWidth: 1,
       }},
       scales: {
-        x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { min: 0, max: 100, ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        x: { ticks: { color: '#6a9ab5', font: { size: 8, family: 'IBM Plex Mono' }, maxRotation: 40 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+        y: { min: 0, max: 100, ticks: { color: '#6a9ab5', font: { size: 8, family: 'IBM Plex Mono' } }, grid: { color: 'rgba(255,255,255,0.04)' } },
       },
     },
   });
@@ -549,23 +758,45 @@ async function fetchWithTimeout(url, timeoutMs = 60000) {
   }
 }
 
+// ── 更新雨量刻度尺 ─────────────────────────────────────────
+function updateGauge(maxRain3days) {
+  const MAX_SCALE = 400; // mm，刻度尺滿格
+  const pct = Math.min(100, (maxRain3days / MAX_SCALE) * 100);
+  document.getElementById('gauge-fill').style.height = pct + '%';
+  document.getElementById('gauge-max-val').textContent = Math.round(maxRain3days) + 'mm';
+}
+
+// ── 更新 header 時間戳 ─────────────────────────────────────
+function updateTimestamp() {
+  const now = new Date();
+  const hh = String(now.getUTCHours()).padStart(2,'0');
+  const mm = String(now.getUTCMinutes()).padStart(2,'0');
+  const el = document.getElementById('last-updated');
+  if (el) el.textContent = `${hh}:${mm}`;
+}
+
 // ── 主要資料載入 ──────────────────────────────────────────
 async function loadRiskMap() {
   const data = await fetchWithTimeout(`${API_BASE}/api/risk-map`);
 
-  // 更新 header 計數
+  // header 計數更新
   const meta = data.meta || {};
   const rc   = meta.risk_counts || {};
   document.getElementById('cnt-critical').textContent = rc.CRITICAL || 0;
   document.getElementById('cnt-high').textContent     = rc.HIGH     || 0;
   document.getElementById('cnt-medium').textContent   = rc.MEDIUM   || 0;
+  document.getElementById('station-count').textContent = data.features.length;
 
-  // 繪製標記
+  // 計算最高 3 天雨量，更新刻度尺
+  const maxRain = Math.max(...data.features.map(f => f.properties.rain_3days || 0));
+  updateGauge(maxRain);
+
+  // 繪製地圖標記
   data.features.forEach(feat => {
     const props = feat.properties;
     const marker = makeCircleMarker(feat);
 
-    // 點擊：開啟彈窗 + 載入詳情
+    // 點擊：開啟彈窗
     marker.on('click', async () => {
       try {
         const detail = await fetchWithTimeout(`${API_BASE}/api/community/${encodeURIComponent(props.station_id)}`);
@@ -574,16 +805,15 @@ async function loadRiskMap() {
         marker.bindPopup(popup).openPopup();
         setTimeout(() => renderPopupChart(detail.forecast_48h), 80);
       } catch (e) {
-        console.error('Community fetch failed:', e);
+        console.error('Station detail fetch failed:', e);
       }
     });
 
-    // hover tooltip
-    marker.bindTooltip(`<b>${props.station_name}</b><br/>${props.risk_label}`, {
-      className: '',
-      direction: 'top',
-      offset: [0, -5],
-    });
+    // Hover tooltip（英文）
+    marker.bindTooltip(
+      `<b>${props.station_name}</b><br/>${wmoLabel(props.risk_level)}`,
+      { direction: 'top', offset: [0, -5] }
+    );
 
     marker.addTo(map);
   });
@@ -594,31 +824,33 @@ async function loadAlerts() {
   const list = document.getElementById('alert-list');
   const cnt  = document.getElementById('sidebar-count');
 
-  cnt.textContent = `共 ${data.total} 個告警測站`;
+  cnt.textContent = `${data.total} station${data.total !== 1 ? 's' : ''} above threshold`;
 
   if (data.total === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div>目前無高風險告警</div>`;
+    list.innerHTML = `<div class="empty-state" role="status"><div class="empty-icon">✅</div>No active alerts</div>`;
     return;
   }
 
   list.innerHTML = data.alerts.map(a => {
-    const color = riskColor(a.risk_level);
-    const scoreC = a.risk_level === 'CRITICAL' ? 'score-critical' : 'score-high';
+    const color    = riskColor(a.risk_level);
+    const tagClass = wmoTagClass(a.risk_level);
+    const wmoLbl   = wmoLabel(a.risk_level);
     return `
-      <div class="alert-item level-${a.risk_level}" onclick="flyTo(${a.lat},${a.lon})">
-        <div class="alert-top">
-          <div class="alert-name">${a.station_name}</div>
-          <span class="alert-score ${scoreC}">${Math.round(a.risk_score*100)}%</span>
+      <div class="alert-item level-${a.risk_level}" onclick="flyTo(${a.lat},${a.lon})"
+           role="listitem" aria-label="${a.station_name}, ${wmoLbl}, score ${Math.round(a.risk_score*100)}%">
+        <div class="alert-row1">
+          <span class="alert-level-tag ${tagClass}">${wmoLbl}</span>
+          <span class="alert-name">${a.station_name}</span>
+          <span class="alert-score">${Math.round(a.risk_score*100)}%</span>
         </div>
-        <div class="alert-meta">${a.county} ${a.town} ・ <span style="color:${color};font-weight:600">${a.risk_label}</span></div>
-        <div class="alert-rain">24h ${a.rain_24h}mm ・ 3天 ${a.rain_3days}mm ・ 預報PoP ${a.forecast_pop_24h}%</div>
+        <div class="alert-row2">${a.county} · ${a.town}</div>
+        <div class="alert-row3">24h&nbsp;${a.rain_24h}mm &nbsp;3d&nbsp;${a.rain_3days}mm &nbsp;PoP&nbsp;${a.forecast_pop_24h}%</div>
       </div>`;
   }).join('');
 }
 
 function flyTo(lat, lon) {
   map.flyTo([lat, lon], 13, { duration: 1 });
-  // 手機關閉側邊欄
   if (window.innerWidth <= 768) closeSidebar();
 }
 
@@ -635,9 +867,9 @@ function closeSidebar() {
 document.getElementById('fab-alert').addEventListener('click', openSidebar);
 document.getElementById('overlay').addEventListener('click', closeSidebar);
 
-// ── 初始化 ────────────────────────────────────────────────
-function setLoadingText(msg) {
-  const el = document.querySelector('#loading p');
+// ── Loading 狀態控制 ──────────────────────────────────────
+function setLoadingMsg(msg) {
+  const el = document.getElementById('loading-msg');
   if (el) el.textContent = msg;
 }
 
@@ -651,30 +883,32 @@ function hideLoading() {
 function showError(msg) {
   const list = document.getElementById('alert-list');
   const cnt  = document.getElementById('sidebar-count');
-  if (list) list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>${msg}</div>`;
-  if (cnt)  cnt.textContent = '載入失敗';
+  if (list) list.innerHTML = `<div class="empty-state" role="alert"><div class="empty-icon">⚠️</div>${msg}</div>`;
+  if (cnt)  cnt.textContent = 'Connection failed';
 }
 
+// ── 初始化 ────────────────────────────────────────────────
 (async function init() {
   initMap();
+  updateTimestamp();
 
   // Step 1：喚醒後端（Render 免費方案冷啟動需 30-60 秒）
-  setLoadingText('連線中，首次載入需喚醒伺服器（約 30 秒）…');
+  setLoadingMsg('Connecting to server — first load may take up to 30 s…');
   try {
     await fetchWithTimeout(`${API_BASE}/healthz`, 70000);
   } catch (e) {
     hideLoading();
-    showError('無法連接伺服器，請稍後再試<br/><small style="opacity:.6">Render 可能正在冷啟動，請等候 30 秒後重新整理</small>');
+    showError('Cannot reach server.<br/><small style="opacity:.55">Render may be waking up. Refresh in 30 seconds.</small>');
     return;
   }
 
   // Step 2：載入地圖與告警資料
-  setLoadingText('伺服器已就緒，載入風險地圖…');
+  setLoadingMsg('Server online — loading risk map…');
   try {
     await Promise.all([loadRiskMap(), loadAlerts()]);
   } catch (e) {
-    console.error('載入失敗:', e);
-    showError('資料載入失敗，請重新整理頁面<br/><small style="opacity:.6">' + e.message + '</small>');
+    console.error('Load failed:', e);
+    showError('Failed to load data. Please refresh.<br/><small style="opacity:.55">' + e.message + '</small>');
   }
 
   hideLoading();
