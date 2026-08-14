@@ -530,7 +530,23 @@
     }
     .btn-view-care:hover { background: rgba(74,155,190,0.15); }
 
-  </style>
+  
+    .btn-view-care-large {
+        display: block; width: 100%; margin-top: 0.5rem;
+        background: rgba(74,155,190,0.15); border: 1px solid var(--accent); color: var(--accent);
+        border-radius: 3px; padding: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+        font-family: 'IBM Plex Mono', monospace; transition: 0.2s; text-align: center;
+    }
+    .btn-view-care-large:hover { background: var(--accent); color: #fff; }
+    
+    .btn-view-care-list {
+        background: transparent; border: 1px solid var(--c-severe); color: var(--text);
+        border-radius: 3px; padding: 4px 8px; font-size: 0.65rem; cursor: pointer;
+        font-family: 'IBM Plex Mono', monospace; transition: 0.2s; margin-top: 6px; width: 100%; text-align: center;
+    }
+    .btn-view-care-list:hover { background: var(--c-severe); color: #fff; }
+
+</style>
 </head>
 <body>
 
@@ -548,9 +564,14 @@
     <span class="brand-sub">Community Flood &amp; Debris Flow Risk Monitor</span>
   </div>
   
+  
+  <div class="mode-toggle">
+    <div id="radar-btn" class="sim-label" onclick="toggleRadar()">[ RADAR: OFF ]</div>
+  </div>
   <div class="mode-toggle">
     <div id="sim-btn" class="sim-label" onclick="toggleSimulation()">[ SIMULATION: OFF ]</div>
   </div>
+
   <div class="header-status" id="header-stats" aria-label="Station risk summary">
     <div class="alert-counts">
       <div class="ac" aria-label="Extreme risk stations">
@@ -662,8 +683,26 @@ const RISK_COLORS = {
 const RISK_RADIUS = { LOW: 4, MEDIUM: 5.5, HIGH: 7.5, CRITICAL: 9 };
 
 let map, popupChart = null;
+let radarLayer = null;
+let isRadarOn = false;
+
 
 let isSimulation = false;
+
+function toggleRadar() {
+  isRadarOn = !isRadarOn;
+  const btn = document.getElementById('radar-btn');
+  if (isRadarOn) {
+    btn.textContent = '[ RADAR: ON ]';
+    btn.classList.add('active');
+    if (radarLayer) map.addLayer(radarLayer);
+  } else {
+    btn.textContent = '[ RADAR: OFF ]';
+    btn.classList.remove('active');
+    if (radarLayer) map.removeLayer(radarLayer);
+  }
+}
+
 function toggleSimulation() {
   isSimulation = !isSimulation;
   const btn = document.getElementById('sim-btn');
@@ -727,11 +766,11 @@ function initMap() {
 
   // Radar Overlay (RainViewer)
   const time = Math.floor(Date.now() / 1000 / 600) * 600; // 10 min bucket
-  const radar = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${time}/256/{z}/{x}/{y}/2/1_1.png`, {
+  radarLayer = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${time}/256/{z}/{x}/{y}/2/1_1.png`, {
     opacity: 0.65,
     zIndex: 10
   });
-  L.control.layers(null, { "Rainfall Radar": radar }, { position: 'topright' }).addTo(map);
+  
 
 }
 
@@ -808,7 +847,9 @@ function makePopupContent(props, detail) {
 
         <div class="care-count" aria-label="Vulnerable persons in county: ${detail ? detail.vulnerable.county_total : '?'}">
           [i] ${detail ? detail.vulnerable.county_total : '?'} at risk
-          <button class="btn-view-care" onclick="openCareModal('${props.station_name}')">View Care List</button>
+          </div>
+        <button class="btn-view-care-large" onclick="openCareModal('${props.station_name}')">[ VIEW CARE REGISTRY ]</button>
+        <div style="display:none;">
         </div>
 
       </div>
@@ -956,6 +997,7 @@ async function loadAlerts() {
         </div>
         <div class="alert-row2">${a.county} · ${a.town}</div>
         <div class="alert-row3">24h&nbsp;${a.rain_24h}mm &nbsp;3d&nbsp;${a.rain_3days}mm &nbsp;PoP&nbsp;${a.forecast_pop_24h}%</div>
+        ${(a.risk_level === 'CRITICAL' || a.risk_level === 'HIGH') ? `<button class="btn-view-care-list" onclick="event.stopPropagation(); openCareModal('${a.station_name}')">[ VIEW CARE REGISTRY ]</button>` : ''}
       </div>`;
   }).join('');
 }
