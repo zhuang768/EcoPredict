@@ -761,12 +761,11 @@ function initMap() {
   });
 
 
-  // CartoDB Dark Matter
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS Community',
+  // Esri World Topo Map
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
     subdomains: 'abcd',
-    maxZoom: 20,
-    className: 'dark-basemap'
+    maxZoom: 19
   }).addTo(map);
 
   // Radar Overlay (RainViewer)
