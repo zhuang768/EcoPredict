@@ -511,7 +511,7 @@
 
     /* ── 關懷名單 Modal ─────────────────────────────────────── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(9,21,34,0.85); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 90%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 90%; max-width: 640px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
     .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface2); }
     .modal-title { font-size: 1rem; font-weight: 600; color: var(--text); }
     .modal-close { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
@@ -952,7 +952,7 @@ async function loadRiskMap() {
     marker.on('click', async () => {
       try {
         const detail = await fetchWithTimeout(getEndpoint(`/api/community/${encodeURIComponent(props.station_id)}`));
-        const popup = L.popup({ maxWidth: 320, closeButton: true })
+        const popup = L.popup({ minWidth: 400, maxWidth: 440, closeButton: true })
           .setContent(makePopupContent(props, detail));
         marker.bindPopup(popup).openPopup();
         setTimeout(() => renderPopupChart(detail.forecast_48h), 80);
