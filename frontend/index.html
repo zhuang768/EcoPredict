@@ -600,7 +600,7 @@
         <div class="sidebar-count" id="sidebar-count">Loading…</div>
       </div>
       <div class="alert-list" id="alert-list" role="list">
-        <div class="empty-state"><div class="empty-icon">⏳</div>Connecting…</div>
+        <div class="empty-state"><div class="empty-icon">[!]</div>Connecting…</div>
       </div>
     </aside>
   </div>
@@ -623,13 +623,13 @@
           <tr><td>#8455</td><td>Chronic Illness</td><td>0988-789-xxx</td></tr>
         </tbody>
       </table>
-      <button id="dispatch-btn" class="dispatch-btn" onclick="dispatchSMS()">🚨 DISPATCH EVACUATION SMS</button>
+      <button id="dispatch-btn" class="dispatch-btn" onclick="dispatchSMS()">[!] DISPATCH EVACUATION SMS</button>
     </div>
   </div>
 </div>
 
 <!-- 手機 FAB -->
-<button id="fab-alert" aria-label="Open alert list">🚨</button>
+<button id="fab-alert" aria-label="Open alert list">[!]</button>
 <div id="overlay" aria-hidden="true"></div>
 
 <script>
@@ -694,7 +694,7 @@ function openCareModal(stationName) {
   document.getElementById('modal-station-name').textContent = stationName;
   const btn = document.getElementById('dispatch-btn');
   btn.className = 'dispatch-btn';
-  btn.textContent = '🚨 DISPATCH EVACUATION SMS';
+  btn.textContent = '[!] DISPATCH EVACUATION SMS';
   document.getElementById('care-modal').style.display = 'flex';
 }
 function closeCareModal() { document.getElementById('care-modal').style.display = 'none'; }
@@ -702,7 +702,7 @@ function dispatchSMS() {
   const btn = document.getElementById('dispatch-btn');
   btn.textContent = 'Sending...';
   setTimeout(() => {
-    btn.textContent = '✅ SMS DISPATCHED';
+    btn.textContent = '[✓] SMS DISPATCHED';
     btn.classList.add('sent');
   }, 800);
 }
@@ -807,7 +807,7 @@ function makePopupContent(props, detail) {
         </div>
 
         <div class="care-count" aria-label="Vulnerable persons in county: ${detail ? detail.vulnerable.county_total : '?'}">
-          &#x1F465; ${detail ? detail.vulnerable.county_total : '?'} at risk
+          [i] ${detail ? detail.vulnerable.county_total : '?'} at risk
           <button class="btn-view-care" onclick="openCareModal('${props.station_name}')">View Care List</button>
         </div>
 
@@ -938,7 +938,7 @@ async function loadAlerts() {
   cnt.textContent = `${data.total} station${data.total !== 1 ? 's' : ''} above threshold`;
 
   if (data.total === 0) {
-    list.innerHTML = `<div class="empty-state" role="status"><div class="empty-icon">✅</div>No active alerts</div>`;
+    list.innerHTML = `<div class="empty-state" role="status"><div class="empty-icon">[✓]</div>No active alerts</div>`;
     return;
   }
 
@@ -994,7 +994,7 @@ function hideLoading() {
 function showError(msg) {
   const list = document.getElementById('alert-list');
   const cnt  = document.getElementById('sidebar-count');
-  if (list) list.innerHTML = `<div class="empty-state" role="alert"><div class="empty-icon">⚠️</div>${msg}</div>`;
+  if (list) list.innerHTML = `<div class="empty-state" role="alert"><div class="empty-icon">[!]</div>${msg}</div>`;
   if (cnt)  cnt.textContent = 'Connection failed';
 }
 
