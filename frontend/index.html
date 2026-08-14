@@ -546,6 +546,10 @@
     }
     .btn-view-care-list:hover { background: var(--c-severe); color: #fff; }
 
+    /* ── 暗色衛星地圖濾鏡 ───────────────────────────────────── */
+    .dark-basemap {
+      filter: brightness(0.4) contrast(1.1) grayscale(0.2) sepia(0.2) hue-rotate(180deg);
+    }
 </style>
 </head>
 <body>
@@ -758,10 +762,11 @@ function initMap() {
 
 
   // CartoDB Dark Matter
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/">OSM</a> © <a href="https://carto.com/">CARTO</a>',
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS Community',
     subdomains: 'abcd',
-    maxZoom: 19,
+    maxZoom: 20,
+    className: 'dark-basemap'
   }).addTo(map);
 
   // Radar Overlay (RainViewer)
