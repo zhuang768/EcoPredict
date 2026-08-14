@@ -1,1 +1,43 @@
-{"vulnerable": {"county_total": 327, "community_specific": 35}, "forecast_48h": [{"label": "00:00", "pop": 100}, {"label": "03:00", "pop": 100}, {"label": "06:00", "pop": 90}, {"label": "09:00", "pop": 100}, {"label": "12:00", "pop": 80}, {"label": "15:00", "pop": 70}, {"label": "18:00", "pop": 50}, {"label": "21:00", "pop": 30}]}
+{
+  "vulnerable": {
+    "county_total": 327,
+    "community_specific": 35
+  },
+  "forecast_48h": [
+    {
+      "label": "00:00",
+      "pop": 100
+    },
+    {
+      "label": "03:00",
+      "pop": 100
+    },
+    {
+      "label": "06:00",
+      "pop": 90
+    },
+    {
+      "label": "09:00",
+      "pop": 100
+    },
+    {
+      "label": "12:00",
+      "pop": 80
+    },
+    {
+      "label": "15:00",
+      "pop": 70
+    },
+    {
+      "label": "18:00",
+      "pop": 50
+    },
+    {
+      "label": "21:00",
+      "pop": 30
+    }
+  ],
+  "station_name": "",
+  "county": "",
+  "town": ""
+}

@@ -23,3 +23,5 @@ tqdm==4.66.4
 
 # Testing
 pytest==8.2.2
+
+pypinyin>=0.55.0

@@ -58,6 +58,53 @@ FEATURE_COLS = [
 ]
 
 # ── 應用程式狀態 ─────────────────────────────────────────────────────────────
+
+import pypinyin
+
+COUNTY_MAP = {
+    "臺北市": "Taipei City", "台北市": "Taipei City",
+    "新北市": "New Taipei City",
+    "基隆市": "Keelung City",
+    "桃園市": "Taoyuan City",
+    "新竹縣": "Hsinchu County", "新竹市": "Hsinchu City",
+    "苗栗縣": "Miaoli County",
+    "臺中市": "Taichung City", "台中市": "Taichung City",
+    "彰化縣": "Changhua County",
+    "南投縣": "Nantou County",
+    "雲林縣": "Yunlin County",
+    "嘉義縣": "Chiayi County", "嘉義市": "Chiayi City",
+    "臺南市": "Tainan City", "台南市": "Tainan City",
+    "高雄市": "Kaohsiung City",
+    "屏東縣": "Pingtung County",
+    "宜蘭縣": "Yilan County",
+    "花蓮縣": "Hualien County",
+    "臺東縣": "Taitung County", "台東縣": "Taitung County",
+    "澎湖縣": "Penghu County",
+    "金門縣": "Kinmen County",
+    "連江縣": "Lienchiang County"
+}
+
+def to_en(text: str) -> str:
+    if not text: return ""
+    text = str(text)
+    if text in COUNTY_MAP: return COUNTY_MAP[text]
+    
+    # Handle suffixes
+    orig = text
+    if text.endswith("區"): text = text[:-1] + " Dist."
+    elif text.endswith("鄉"): text = text[:-1] + " Township"
+    elif text.endswith("鎮"): text = text[:-1] + " Township"
+    elif text.endswith("市") and text not in COUNTY_MAP: text = text[:-1] + " City"
+    
+    # Translate the chinese characters using pypinyin
+    # Only translate if there are chinese characters (simplified heuristic)
+    if any('\u4e00' <= c <= '\u9fff' for c in text):
+        parts = []
+        for word in pypinyin.pinyin(text, style=pypinyin.NORMAL):
+            parts.append(word[0].capitalize())
+        return "".join(parts).replace("Dist.", " Dist.").replace("Township", " Township").replace("City", " City").replace("  ", " ").strip()
+    return orig
+
 class AppState:
     features_df:  pd.DataFrame | None = None
     forecast_df:  pd.DataFrame | None = None
@@ -203,8 +250,8 @@ async def get_risk_map() -> dict:
             "properties": {
                 "station_id":   str(row.get("station_id", "")),
                 "station_name": str(row.get("station_name", "")),
-                "county":       str(row.get("county", "")),
-                "town":         str(row.get("town", "")),
+                "county":       to_en(str(row.get("county", ""))),
+                "town":         to_en(str(row.get("town", ""))),
                 "risk_level":   str(row.get("risk_level", "LOW")),
                 "risk_label":   str(row.get("risk_label", "低風險")),
                 "risk_score":   round(float(row.get("risk_score", 0)), 4),
@@ -265,7 +312,7 @@ async def get_community(station_id: str) -> dict:
     forecast = _nearest_township_forecast(lat, lon)
 
     # 關懷名單統計
-    county = str(row.get("county", ""))
+    county = to_en(str(row.get("county", "")))
     vulnerable_count = 0
     priority_count = 0
     if _state.registry and county:
@@ -275,9 +322,9 @@ async def get_community(station_id: str) -> dict:
 
     return {
         "station_id":    str(row.get("station_id", "")),
-        "station_name":  str(row.get("station_name", "")),
+        "station_name":  to_en(str(row.get("station_name", ""))),
         "county":        county,
-        "town":          str(row.get("town", "")),
+        "town":          to_en(str(row.get("town", ""))),
         "lat":           lat,
         "lon":           lon,
         "altitude_m":    float(row.get("altitude", 0)) if pd.notna(row.get("altitude")) else 0,
@@ -311,9 +358,9 @@ async def get_alerts() -> dict:
     for _, row in alerted.iterrows():
         alerts.append({
             "station_id":    str(row.get("station_id", "")),
-            "station_name":  str(row.get("station_name", "")),
-            "county":        str(row.get("county", "")),
-            "town":          str(row.get("town", "")),
+            "station_name":  to_en(str(row.get("station_name", ""))),
+            "county":        to_en(str(row.get("county", ""))),
+            "town":          to_en(str(row.get("town", ""))),
             "lat":           float(row.get("lat", 0)),
             "lon":           float(row.get("lon", 0)),
             "risk_level":    str(row.get("risk_level", "")),
