@@ -503,6 +503,33 @@
       #fab-alert { display: flex; align-items: center; justify-content: center; }
       #overlay.visible { display: block; }
     }
+  
+    /* ── 模擬模式切換 ───────────────────────────────────────── */
+    .mode-toggle { margin-left: 1rem; display: flex; align-items: center; }
+    .sim-label { font-size: 0.7rem; font-weight: 600; font-family: 'IBM Plex Mono', monospace; padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; user-select: none; transition: 0.2s; background: var(--surface2); color: var(--muted); }
+    .sim-label.active { background: var(--c-extreme); color: #fff; border-color: var(--c-extreme); box-shadow: 0 0 10px rgba(196,48,48,0.5); }
+
+    /* ── 關懷名單 Modal ─────────────────────────────────────── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(9,21,34,0.85); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 90%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
+    .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface2); }
+    .modal-title { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 1rem; }
+    .care-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-bottom: 1rem; }
+    .care-table th, .care-table td { padding: 0.6rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .care-table th { color: var(--muted); font-weight: 500; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; }
+    .dispatch-btn { display: block; width: 100%; padding: 0.8rem; background: var(--c-extreme); color: #fff; border: none; border-radius: 4px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; text-align: center; }
+    .dispatch-btn:hover { background: #e03b3b; }
+    .dispatch-btn.sent { background: var(--c-minor); cursor: default; }
+    
+    .btn-view-care {
+        background: transparent; border: 1px solid var(--accent); color: var(--accent);
+        border-radius: 3px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer;
+        font-family: 'IBM Plex Mono', monospace; transition: 0.2s;
+    }
+    .btn-view-care:hover { background: rgba(74,155,190,0.15); }
+
   </style>
 </head>
 <body>
@@ -519,6 +546,10 @@
   <div class="brand">
     <span class="brand-name">EcoPredict</span>
     <span class="brand-sub">Community Flood &amp; Debris Flow Risk Monitor</span>
+  </div>
+  
+  <div class="mode-toggle">
+    <div id="sim-btn" class="sim-label" onclick="toggleSimulation()">[ SIMULATION: OFF ]</div>
   </div>
   <div class="header-status" id="header-stats" aria-label="Station risk summary">
     <div class="alert-counts">
@@ -575,6 +606,28 @@
   </div>
 </main>
 
+
+<!-- Care Registry Modal -->
+<div id="care-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Vulnerable Care Registry — <span id="modal-station-name"></span></div>
+      <button class="modal-close" onclick="closeCareModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <table class="care-table">
+        <thead><tr><th>ID</th><th>CATEGORY</th><th>CONTACT</th></tr></thead>
+        <tbody>
+          <tr><td>#8402</td><td>Elderly (Living Alone)</td><td>0912-345-xxx</td></tr>
+          <tr><td>#8419</td><td>Wheelchair Access</td><td>0933-456-xxx</td></tr>
+          <tr><td>#8455</td><td>Chronic Illness</td><td>0988-789-xxx</td></tr>
+        </tbody>
+      </table>
+      <button id="dispatch-btn" class="dispatch-btn" onclick="dispatchSMS()">🚨 DISPATCH EVACUATION SMS</button>
+    </div>
+  </div>
+</div>
+
 <!-- 手機 FAB -->
 <button id="fab-alert" aria-label="Open alert list">🚨</button>
 <div id="overlay" aria-hidden="true"></div>
@@ -610,6 +663,51 @@ const RISK_RADIUS = { LOW: 4, MEDIUM: 5.5, HIGH: 7.5, CRITICAL: 9 };
 
 let map, popupChart = null;
 
+let isSimulation = false;
+function toggleSimulation() {
+  isSimulation = !isSimulation;
+  const btn = document.getElementById('sim-btn');
+  if (isSimulation) {
+    btn.textContent = '[ SIMULATION: GAEMI TYPHOON ]';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '[ SIMULATION: OFF ]';
+    btn.classList.remove('active');
+  }
+  // Clear map markers and alerts
+  map.eachLayer(layer => { if(layer instanceof L.CircleMarker) map.removeLayer(layer); });
+  init();
+}
+
+function getEndpoint(path) {
+  if (isSimulation) {
+    if (path.includes('/risk-map')) return 'sim-data/risk-map.json';
+    if (path.includes('/alerts')) return 'sim-data/alerts.json';
+    if (path.includes('/community/')) return 'sim-data/community.json';
+    if (path.includes('/healthz')) return 'sim-data/risk-map.json';
+  }
+  return `${API_BASE}${path}`;
+}
+
+// Modal logic
+function openCareModal(stationName) {
+  document.getElementById('modal-station-name').textContent = stationName;
+  const btn = document.getElementById('dispatch-btn');
+  btn.className = 'dispatch-btn';
+  btn.textContent = '🚨 DISPATCH EVACUATION SMS';
+  document.getElementById('care-modal').style.display = 'flex';
+}
+function closeCareModal() { document.getElementById('care-modal').style.display = 'none'; }
+function dispatchSMS() {
+  const btn = document.getElementById('dispatch-btn');
+  btn.textContent = 'Sending...';
+  setTimeout(() => {
+    btn.textContent = '✅ SMS DISPATCHED';
+    btn.classList.add('sent');
+  }, 800);
+}
+
+
 // ── Leaflet 地圖初始化 ─────────────────────────────────────
 function initMap() {
   map = L.map('map', {
@@ -619,12 +717,22 @@ function initMap() {
     attributionControl: true,
   });
 
+
   // CartoDB Dark Matter
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/">OSM</a> © <a href="https://carto.com/">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 19,
   }).addTo(map);
+
+  // Radar Overlay (RainViewer)
+  const time = Math.floor(Date.now() / 1000 / 600) * 600; // 10 min bucket
+  const radar = L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${time}/256/{z}/{x}/{y}/2/1_1.png`, {
+    opacity: 0.65,
+    zIndex: 10
+  });
+  L.control.layers(null, { "Rainfall Radar": radar }, { position: 'topright' }).addTo(map);
+
 }
 
 // ── 顏色與樣式工具 ────────────────────────────────────────
@@ -697,9 +805,12 @@ function makePopupContent(props, detail) {
           <div class="score-bar"><div class="score-bar-fill" style="${barFill}"></div></div>
           <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:${color}">${scoreP}%</span>
         </div>
+
         <div class="care-count" aria-label="Vulnerable persons in county: ${detail ? detail.vulnerable.county_total : '?'}">
           &#x1F465; ${detail ? detail.vulnerable.county_total : '?'} at risk
+          <button class="btn-view-care" onclick="openCareModal('${props.station_name}')">View Care List</button>
         </div>
+
       </div>
     </div>`;
 }
@@ -777,7 +888,7 @@ function updateTimestamp() {
 
 // ── 主要資料載入 ──────────────────────────────────────────
 async function loadRiskMap() {
-  const data = await fetchWithTimeout(`${API_BASE}/api/risk-map`);
+  const data = await fetchWithTimeout(getEndpoint('/api/risk-map'));
 
   // header 計數更新
   const meta = data.meta || {};
@@ -799,7 +910,7 @@ async function loadRiskMap() {
     // 點擊：開啟彈窗
     marker.on('click', async () => {
       try {
-        const detail = await fetchWithTimeout(`${API_BASE}/api/community/${encodeURIComponent(props.station_id)}`);
+        const detail = await fetchWithTimeout(getEndpoint(`/api/community/${encodeURIComponent(props.station_id)}`));
         const popup = L.popup({ maxWidth: 320, closeButton: true })
           .setContent(makePopupContent(props, detail));
         marker.bindPopup(popup).openPopup();
@@ -820,7 +931,7 @@ async function loadRiskMap() {
 }
 
 async function loadAlerts() {
-  const data = await fetchWithTimeout(`${API_BASE}/api/alerts`);
+  const data = await fetchWithTimeout(getEndpoint('/api/alerts'));
   const list = document.getElementById('alert-list');
   const cnt  = document.getElementById('sidebar-count');
 
@@ -887,15 +998,14 @@ function showError(msg) {
   if (cnt)  cnt.textContent = 'Connection failed';
 }
 
-// ── 初始化 ────────────────────────────────────────────────
-(async function init() {
-  initMap();
+initMap();
+async function init() {
   updateTimestamp();
 
   // Step 1：喚醒後端（Render 免費方案冷啟動需 30-60 秒）
   setLoadingMsg('Connecting to server — first load may take up to 30 s…');
   try {
-    await fetchWithTimeout(`${API_BASE}/healthz`, 70000);
+    await fetchWithTimeout(getEndpoint('/healthz'), 70000);
   } catch (e) {
     hideLoading();
     showError('Cannot reach server.<br/><small style="opacity:.55">Render may be waking up. Refresh in 30 seconds.</small>');
@@ -912,7 +1022,9 @@ function showError(msg) {
   }
 
   hideLoading();
-})();
+}
+
+init();
 </script>
 </body>
 </html>
