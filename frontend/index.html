@@ -11,33 +11,33 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <!-- IBM Plex Sans + Mono — 儀器風格字體 -->
+  <!-- IBM Plex Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <!-- EcoPredict API 設定（必須在所有應用 JS 之前載入） -->
+  <!-- EcoPredict API Settings -->
   <script src="config.js"></script>
 
   <style>
-    /* ── CSS 設計語彙：水文儀器 / WMO 警戒配色 ───────────── */
+    /* ── CSS Design Language ── */
     :root {
-      /* 深海藍黑底色系 */
+      /* Dark blue background palette */
       --bg:        #091522;
       --surface:   #0f2133;
       --surface2:  #1a3248;
       --border:    #1e3d56;
       --border-lt: rgba(74,155,190,0.15);
 
-      /* 文字 */
+      /* Text */
       --text:      #d4e8f0;
       --muted:     #6a9ab5;
 
-      /* 品牌色：雨量計刻度藍 */
+      /* Brand color */
       --accent:    #4a9bbe;
 
-      /* WMO 四色警戒系統 */
-      --c-minor:    #3d9e6a;   /* Minor  — 平靜綠 */
-      --c-moderate: #c8a828;   /* Moderate — WMO 黃色警戒深化 */
-      --c-severe:   #c96830;   /* Severe — 洪水警戒橙 */
-      --c-extreme:  #c43030;   /* Extreme — 消防警報紅 */
+      /* WMO 4-Level Warning System */
+      --c-minor:    #3d9e6a;   /* Minor */
+      --c-moderate: #c8a828;   /* Moderate */
+      --c-severe:   #c96830;   /* Severe */
+      --c-extreme:  #c43030;   /* Extreme */
 
       --sidebar-w: 360px;
       --header-h:  52px;
@@ -56,7 +56,7 @@
       overflow: hidden;
     }
 
-    /* ── 標題列：儀器狀態列風格 ───────────────────────────── */
+    /* ── Header ── */
     header {
       height: var(--header-h);
       flex-shrink: 0;
@@ -89,7 +89,7 @@
       white-space: nowrap;
     }
 
-    /* 狀態列右側：氣象站資訊 */
+    /* Right side of status bar: Station info */
     .header-status {
       margin-left: auto;
       display: flex;
@@ -106,7 +106,7 @@
     }
     .status-val { color: var(--text); font-weight: 500; }
 
-    /* 告警計數 */
+    /* Alert count */
     .alert-counts {
       display: flex;
       gap: 0.75rem;
@@ -114,7 +114,7 @@
     .ac { display: flex; align-items: center; gap: 3px; font-size: 0.68rem; font-family: 'IBM Plex Mono', monospace; }
     .ac-dot { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; }
 
-    /* ── 主體佈局 ─────────────────────────────────────────── */
+    /* ── Main Layout ── */
     main {
       flex: 1;
       display: flex;
@@ -122,14 +122,14 @@
       position: relative;
     }
 
-    /* ── 地圖 ─────────────────────────────────────────────── */
+    /* ── Map ── */
     #map {
       flex: 1;
       min-width: 0;
       background: var(--bg);
     }
 
-    /* Leaflet 主題覆蓋 */
+    /* Leaflet theme overrides */
     .leaflet-container { background: #091522 !important; }
     .leaflet-popup-content-wrapper {
       background: #0f2133 !important;
@@ -154,14 +154,14 @@
       color: var(--text) !important;
     }
 
-    /* Pulse ring 動畫：只用於 EXTREME 標記 */
+    /* Pulse ring animation */
     @keyframes pulse-ring {
       0%   { stroke-opacity: 0.8; r: 10; }
       100% { stroke-opacity: 0;   r: 22; }
     }
     .pulse-ring { animation: pulse-ring 2s ease-out infinite; }
 
-    /* ── 彈窗卡片 ─────────────────────────────────────────── */
+    /* ── Popup Card ── */
     .popup-card {
       padding: 0.9rem 1rem 0.9rem;
       font-family: 'IBM Plex Sans', sans-serif;
@@ -183,7 +183,7 @@
     }
     .popup-sub { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
 
-    /* WMO 徽章：色條 + 文字，無背景色塊 */
+    /* WMO Badge */
     .risk-badge {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.65rem; font-weight: 500;
@@ -198,7 +198,7 @@
     .badge-HIGH,    .badge-SEVERE   { border-color: var(--c-severe);   color: var(--c-severe);   background: rgba(201,104,48,0.08); }
     .badge-CRITICAL,.badge-EXTREME  { border-color: var(--c-extreme);  color: var(--c-extreme);  background: rgba(196,48,48,0.08); }
 
-    /* 雨量讀值：儀器風格，Mono 字體 */
+    /* Rainfall readings */
     .popup-readings {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -245,13 +245,13 @@
       padding: 2px 7px;
     }
 
-    /* ── 側邊欄 ───────────────────────────────────────────── */
+    /* ── Sidebar ── */
     #sidebar-wrap {
       display: flex;
       flex-shrink: 0;
     }
 
-    /* 雨量刻度尺（簽名視覺元素） */
+    /* Rainfall Scale Ruler */
     #rain-gauge {
       width: var(--gauge-w);
       background: var(--surface);
@@ -287,7 +287,7 @@
       background: linear-gradient(to top, var(--c-extreme), var(--c-severe) 40%, var(--c-moderate) 70%, var(--c-minor));
       transition: height 1s ease;
     }
-    /* 刻度線 */
+    /* Scale line */
     .gauge-tick {
       position: absolute;
       right: 100%;
@@ -352,7 +352,7 @@
       color: var(--muted);
     }
 
-    /* 告警清單：調度日誌格式 */
+    /* Alert List */
     .alert-list {
       flex: 1;
       overflow-y: auto;
@@ -378,7 +378,7 @@
     .alert-item.level-MEDIUM,
     .alert-item.level-MODERATE { border-left-color: var(--c-moderate); }
 
-    /* 日誌行格式 */
+    /* Log line format */
     .alert-row1 {
       display: flex; align-items: baseline;
       justify-content: space-between;
@@ -423,7 +423,7 @@
     }
     .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
 
-    /* ── 手機浮動按鈕 ─────────────────────────────────────── */
+    /* ── Mobile FAB ── */
     #fab-alert {
       display: none;
       position: fixed;
@@ -448,7 +448,7 @@
       z-index: 1500;
     }
 
-    /* ── 載入畫面：進度列風格 ───────────────────────────────── */
+    /* ── Loading Screen ── */
     #loading {
       position: fixed; inset: 0;
       background: var(--bg);
@@ -484,7 +484,7 @@
       font-family: 'IBM Plex Mono', monospace;
     }
 
-    /* ── 響應式 ───────────────────────────────────────────── */
+    /* ── Responsive ── */
     @media (max-width: 768px) {
       .brand-sub { display: none; }
       .header-status { display: none; }
@@ -504,12 +504,12 @@
       #overlay.visible { display: block; }
     }
   
-    /* ── 模擬模式切換 ───────────────────────────────────────── */
+    /* ── Simulation Toggle ── */
     .mode-toggle { margin-left: 1rem; display: flex; align-items: center; }
     .sim-label { font-size: 0.7rem; font-weight: 600; font-family: 'IBM Plex Mono', monospace; padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; user-select: none; transition: 0.2s; background: var(--surface2); color: var(--muted); }
     .sim-label.active { background: var(--c-extreme); color: #fff; border-color: var(--c-extreme); box-shadow: 0 0 10px rgba(196,48,48,0.5); }
 
-    /* ── 關懷名單 Modal ─────────────────────────────────────── */
+    /* ── Care Registry Modal ── */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(9,21,34,0.85); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 90%; max-width: 640px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); font-family: 'IBM Plex Sans', sans-serif; overflow: hidden; }
     .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface2); }
@@ -546,7 +546,7 @@
     }
     .btn-view-care-list:hover { background: var(--c-severe); color: #fff; }
 
-    /* ── 衛星地圖微調 ───────────────────────────────────── */
+    /* ── Satellite Map Adjustments ── */
     .dark-basemap {
       filter: brightness(0.9) contrast(1.05);
     }
@@ -554,14 +554,14 @@
 </head>
 <body>
 
-<!-- 載入指示器 -->
+<!-- Loading Indicator -->
 <div id="loading" role="status" aria-live="polite" aria-label="Loading EcoPredict">
   <div class="loading-brand">EcoPredict</div>
   <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
   <div id="loading-msg">Initializing…</div>
 </div>
 
-<!-- 標題列 -->
+<!-- Header -->
 <header>
   <div class="brand">
     <span class="brand-name">EcoPredict</span>
@@ -602,11 +602,11 @@
 </header>
 
 <main>
-  <!-- 地圖 -->
+  <!-- Map -->
   <div id="map" role="application" aria-label="Taiwan flood risk map"></div>
 
   <div id="sidebar-wrap">
-    <!-- 雨量刻度尺（簽名視覺元素） -->
+    <!-- Rainfall Scale Ruler -->
     <div id="rain-gauge" aria-hidden="true">
       <span class="gauge-label">3-Day Max</span>
       <div class="gauge-track" id="gauge-track">
@@ -615,7 +615,7 @@
       <div class="gauge-max-label" id="gauge-max-val">—mm</div>
     </div>
 
-    <!-- 側邊欄 -->
+    <!-- Sidebar -->
     <aside id="sidebar" aria-label="Live alert list">
       <div class="sidebar-header">
         <div class="sidebar-title-row">
@@ -653,18 +653,18 @@
   </div>
 </div>
 
-<!-- 手機 FAB -->
+<!-- Mobile FAB -->
 <button id="fab-alert" aria-label="Open alert list"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></button>
 <div id="overlay" aria-hidden="true"></div>
 
 <script>
-// ── 常數 ──────────────────────────────────────────────────
-// API_BASE 由 config.js 注入的 window.ECOPREDICT_API 決定
+// ── Constants ──
+// API_BASE is injected by config.js
 const API_BASE = (typeof window.ECOPREDICT_API !== 'undefined')
   ? window.ECOPREDICT_API
   : 'http://127.0.0.1:8000';
 
-// WMO 四色警戒系統：API 回傳 LOW/MEDIUM/HIGH/CRITICAL，對應到 WMO 名稱
+// WMO 4-Level Warning System
 const WMO_LABEL = {
   LOW:      'MINOR',
   MEDIUM:   'MODERATE',
@@ -683,7 +683,7 @@ const RISK_COLORS = {
   HIGH:     '#c96830',
   CRITICAL: '#c43030',
 };
-// 半徑對應風險等級
+// Radius corresponds to risk level
 const RISK_RADIUS = { LOW: 4, MEDIUM: 5.5, HIGH: 7.5, CRITICAL: 9 };
 
 let map, popupChart = null;
@@ -751,7 +751,7 @@ function dispatchSMS() {
 }
 
 
-// ── Leaflet 地圖初始化 ─────────────────────────────────────
+// ── Map Initialization ──
 function initMap() {
   map = L.map('map', {
     center: [23.8, 121.0],
@@ -778,7 +778,7 @@ function initMap() {
 
 }
 
-// ── 顏色與樣式工具 ────────────────────────────────────────
+// ── Colors & Styling Tools ──
 function riskColor(level) { return RISK_COLORS[level] || '#6a9ab5'; }
 function wmoLabel(level)  { return WMO_LABEL[level]   || level; }
 function wmoTagClass(level){ return WMO_TAG_CLASS[level] || 'tag-minor'; }
@@ -803,7 +803,7 @@ function makeCircleMarker(feature) {
   return marker;
 }
 
-// ── 彈窗內容（英文化，儀器風格） ──────────────────────────
+// ── Popup Content ──
 function makePopupContent(props, detail) {
   const level  = props.risk_level;
   const color  = riskColor(level);
@@ -914,15 +914,15 @@ async function fetchWithTimeout(url, timeoutMs = 60000) {
   }
 }
 
-// ── 更新雨量刻度尺 ─────────────────────────────────────────
+// ── Update Rainfall Scale Ruler ──
 function updateGauge(maxRain3days) {
-  const MAX_SCALE = 400; // mm，刻度尺滿格
+  const MAX_SCALE = 400; // mm, full scale
   const pct = Math.min(100, (maxRain3days / MAX_SCALE) * 100);
   document.getElementById('gauge-fill').style.height = pct + '%';
   document.getElementById('gauge-max-val').textContent = Math.round(maxRain3days) + 'mm';
 }
 
-// ── 更新 header 時間戳 ─────────────────────────────────────
+// ── Update Header Timestamp ──
 function updateTimestamp() {
   const now = new Date();
   const hh = String(now.getUTCHours()).padStart(2,'0');
@@ -931,11 +931,11 @@ function updateTimestamp() {
   if (el) el.textContent = `${hh}:${mm}`;
 }
 
-// ── 主要資料載入 ──────────────────────────────────────────
+// ── Main Data Loading ──
 async function loadRiskMap() {
   const data = await fetchWithTimeout(getEndpoint('/api/risk-map'));
 
-  // header 計數更新
+  // Update header counts
   const meta = data.meta || {};
   const rc   = meta.risk_counts || {};
   document.getElementById('cnt-critical').textContent = rc.CRITICAL || 0;
@@ -943,16 +943,16 @@ async function loadRiskMap() {
   document.getElementById('cnt-medium').textContent   = rc.MEDIUM   || 0;
   document.getElementById('station-count').textContent = data.features.length;
 
-  // 計算最高 3 天雨量，更新刻度尺
+  // Calculate max 3-day rainfall for scale ruler
   const maxRain = Math.max(...data.features.map(f => f.properties.rain_3days || 0));
   updateGauge(maxRain);
 
-  // 繪製地圖標記
+  // Draw map markers
   data.features.forEach(feat => {
     const props = feat.properties;
     const marker = makeCircleMarker(feat);
 
-    // 點擊：開啟彈窗
+    // Click: open popup
     marker.on('click', async () => {
       try {
         const detail = await fetchWithTimeout(getEndpoint(`/api/community/${encodeURIComponent(props.station_id)}`));
@@ -965,7 +965,7 @@ async function loadRiskMap() {
       }
     });
 
-    // Hover tooltip（英文）
+    // Hover tooltip
     marker.bindTooltip(
       `<b>${props.station_name}</b><br/>${wmoLabel(props.risk_level)}`,
       { direction: 'top', offset: [0, -5] }
@@ -1011,7 +1011,7 @@ function flyTo(lat, lon) {
   if (window.innerWidth <= 768) closeSidebar();
 }
 
-// ── 手機側邊欄控制 ────────────────────────────────────────
+// ── Mobile Sidebar Control ──
 function openSidebar() {
   document.getElementById('sidebar').classList.add('open');
   document.getElementById('overlay').classList.add('visible');
@@ -1024,7 +1024,7 @@ function closeSidebar() {
 document.getElementById('fab-alert').addEventListener('click', openSidebar);
 document.getElementById('overlay').addEventListener('click', closeSidebar);
 
-// ── Loading 狀態控制 ──────────────────────────────────────
+// ── Loading State Control ──
 function setLoadingMsg(msg) {
   const el = document.getElementById('loading-msg');
   if (el) el.textContent = msg;
@@ -1048,7 +1048,7 @@ initMap();
 async function init() {
   updateTimestamp();
 
-  // Step 1：喚醒後端（Render 免費方案冷啟動需 30-60 秒）
+  // Step 1: Wake up backend
   setLoadingMsg('Connecting to server — first load may take up to 30 s…');
   try {
     await fetchWithTimeout(getEndpoint('/healthz'), 70000);
@@ -1058,7 +1058,7 @@ async function init() {
     return;
   }
 
-  // Step 2：載入地圖與告警資料
+  // Step 2: Load map and alert data
   setLoadingMsg('Server online — loading risk map…');
   try {
     await Promise.all([loadRiskMap(), loadAlerts()]);

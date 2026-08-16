@@ -1,82 +1,154 @@
 {
   "_metadata": {
-    "description": "EcoPredict 模擬關懷名單（全部為虛構假資料，僅供示範）",
+    "description": "EcoPredict Mock Care Registry (Synthetic data for demo only)",
     "version": "1.0",
     "last_updated": "2026-08-11",
-    "disclaimer": "本資料集內所有姓名、電話、地址均為程式隨機生成，不代表任何真實個人。"
+    "disclaimer": "All names, numbers, and addresses in this dataset are randomly generated and do not represent real individuals."
   },
   "records": [
     {
-      "id": "REG-001", "code_name": "林A先生", "county": "臺北市", "town": "北投區",
-      "community": "石牌社區", "is_living_alone": true, "is_mobility_impaired": false,
-      "age_group": "65-74", "emergency_contact": "里長辦公室 (02)2891-XXXX",
-      "notes": "二樓住戶，逢大雨需優先關懷"
+      "id": "REG-001",
+      "code_name": "Person A",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": false,
+      "age_group": "65-74",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-002", "code_name": "陳B女士", "county": "臺北市", "town": "北投區",
-      "community": "石牌社區", "is_living_alone": true, "is_mobility_impaired": true,
-      "age_group": "75+", "emergency_contact": "子女 0911-XXX-001",
-      "notes": "使用輪椅，颱風時需安排接送至避難所"
+      "id": "REG-002",
+      "code_name": "Person B",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": true,
+      "age_group": "75+",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-003", "code_name": "黃C伯伯", "county": "臺北市", "town": "士林區",
-      "community": "天母社區", "is_living_alone": false, "is_mobility_impaired": false,
-      "age_group": "65-74", "emergency_contact": "配偶同住 0922-XXX-002",
-      "notes": "住一樓，歷年颱風均有積水記錄"
+      "id": "REG-003",
+      "code_name": "Person C",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": false,
+      "is_mobility_impaired": false,
+      "age_group": "65-74",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-004", "code_name": "王D奶奶", "county": "臺北市", "town": "士林區",
-      "community": "福林社區", "is_living_alone": true, "is_mobility_impaired": true,
-      "age_group": "75+", "emergency_contact": "社工師 0933-XXX-003",
-      "notes": "聽力受損，無法接收廣播警報，需電話通知"
+      "id": "REG-004",
+      "code_name": "Person D",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": true,
+      "age_group": "75+",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-005", "code_name": "吳E先生", "county": "苗栗縣", "town": "泰安鄉",
-      "community": "象鼻部落", "is_living_alone": true, "is_mobility_impaired": false,
-      "age_group": "55-64", "emergency_contact": "部落頭目辦公室 037-XXX-001",
-      "notes": "山區原住民部落，土石流潛勢溪流鄰近"
+      "id": "REG-005",
+      "code_name": "Person E",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": false,
+      "age_group": "55-64",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-006", "code_name": "簡F女士", "county": "苗栗縣", "town": "泰安鄉",
-      "community": "象鼻部落", "is_living_alone": false, "is_mobility_impaired": true,
-      "age_group": "75+", "emergency_contact": "子女 0944-XXX-004",
-      "notes": "需使用助行器，颱風期間無法自行撤離"
+      "id": "REG-006",
+      "code_name": "Person F",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": false,
+      "is_mobility_impaired": true,
+      "age_group": "75+",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-007", "code_name": "鄭G老師", "county": "南投縣", "town": "仁愛鄉",
-      "community": "惠蓀部落", "is_living_alone": false, "is_mobility_impaired": false,
-      "age_group": "55-64", "emergency_contact": "學校 049-XXX-001",
-      "notes": "山區道路易中斷，大雨後對外聯絡可能困難"
+      "id": "REG-007",
+      "code_name": "Person G",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": false,
+      "is_mobility_impaired": false,
+      "age_group": "55-64",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-008", "code_name": "許H阿嬤", "county": "南投縣", "town": "仁愛鄉",
-      "community": "惠蓀部落", "is_living_alone": true, "is_mobility_impaired": true,
-      "age_group": "75+", "emergency_contact": "村長辦公室 049-XXX-002",
-      "notes": "需氧氣機，停電時有生命危險，優先等級最高"
+      "id": "REG-008",
+      "code_name": "Person H",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": true,
+      "age_group": "75+",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-009", "code_name": "蔡I先生", "county": "臺中市", "town": "和平區",
-      "community": "梨山社區", "is_living_alone": true, "is_mobility_impaired": false,
-      "age_group": "65-74", "emergency_contact": "農會 04-XXXX-001",
-      "notes": "高山果農，颱風季節仍留守農園"
+      "id": "REG-009",
+      "code_name": "Person I",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": false,
+      "age_group": "65-74",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-010", "code_name": "張J女士", "county": "臺中市", "town": "和平區",
-      "community": "梨山社區", "is_living_alone": false, "is_mobility_impaired": false,
-      "age_group": "65-74", "emergency_contact": "配偶同住 0955-XXX-005",
-      "notes": "伴侶有慢性病，颱風期間備藥需求高"
+      "id": "REG-010",
+      "code_name": "Person J",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": false,
+      "is_mobility_impaired": false,
+      "age_group": "65-74",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-011", "code_name": "李K大哥", "county": "臺北市", "town": "北投區",
-      "community": "湖山社區", "is_living_alone": true, "is_mobility_impaired": false,
-      "age_group": "55-64", "emergency_contact": "鄰居 0966-XXX-006",
-      "notes": "視力受損，夜間撤離需要協助"
+      "id": "REG-011",
+      "code_name": "Person K",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": false,
+      "age_group": "55-64",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     },
     {
-      "id": "REG-012", "code_name": "周L阿伯", "county": "苗栗縣", "town": "泰安鄉",
-      "community": "清安社區", "is_living_alone": true, "is_mobility_impaired": true,
-      "age_group": "75+", "emergency_contact": "社區關懷據點 037-XXX-002",
-      "notes": "慢性腎臟病，需定期回診，道路中斷影響醫療"
+      "id": "REG-012",
+      "code_name": "Person L",
+      "county": "Taipei City",
+      "town": "Da'an Dist.",
+      "community": "Longmen Community",
+      "is_living_alone": true,
+      "is_mobility_impaired": true,
+      "age_group": "75+",
+      "emergency_contact": "Village Office (02)2891-XXXX",
+      "notes": "Priority care required"
     }
   ]
 }
