@@ -1,0 +1,212 @@
+[
+  {
+    "id": "GLB-001",
+    "name": "Miami",
+    "country": "USA",
+    "lat": 25.7617,
+    "lon": -80.1918
+  },
+  {
+    "id": "GLB-002",
+    "name": "New Orleans",
+    "country": "USA",
+    "lat": 29.9511,
+    "lon": -90.0715
+  },
+  {
+    "id": "GLB-003",
+    "name": "Houston",
+    "country": "USA",
+    "lat": 29.7604,
+    "lon": -95.3698
+  },
+  {
+    "id": "GLB-004",
+    "name": "Jakarta",
+    "country": "Indonesia",
+    "lat": -6.2088,
+    "lon": 106.8456
+  },
+  {
+    "id": "GLB-005",
+    "name": "Manila",
+    "country": "Philippines",
+    "lat": 14.5995,
+    "lon": 120.9842
+  },
+  {
+    "id": "GLB-006",
+    "name": "Tokyo",
+    "country": "Japan",
+    "lat": 35.6762,
+    "lon": 139.6503
+  },
+  {
+    "id": "GLB-007",
+    "name": "Mumbai",
+    "country": "India",
+    "lat": 19.076,
+    "lon": 72.8777
+  },
+  {
+    "id": "GLB-008",
+    "name": "Dhaka",
+    "country": "Bangladesh",
+    "lat": 23.8103,
+    "lon": 90.4125
+  },
+  {
+    "id": "GLB-009",
+    "name": "Bangkok",
+    "country": "Thailand",
+    "lat": 13.7563,
+    "lon": 100.5018
+  },
+  {
+    "id": "GLB-010",
+    "name": "Ho Chi Minh City",
+    "country": "Vietnam",
+    "lat": 10.8231,
+    "lon": 106.6297
+  },
+  {
+    "id": "GLB-011",
+    "name": "Taipei",
+    "country": "Taiwan",
+    "lat": 25.033,
+    "lon": 121.5654
+  },
+  {
+    "id": "GLB-012",
+    "name": "London",
+    "country": "UK",
+    "lat": 51.5074,
+    "lon": -0.1278
+  },
+  {
+    "id": "GLB-013",
+    "name": "Amsterdam",
+    "country": "Netherlands",
+    "lat": 52.3676,
+    "lon": 4.9041
+  },
+  {
+    "id": "GLB-014",
+    "name": "Venice",
+    "country": "Italy",
+    "lat": 45.4408,
+    "lon": 12.3155
+  },
+  {
+    "id": "GLB-015",
+    "name": "Lagos",
+    "country": "Nigeria",
+    "lat": 6.5244,
+    "lon": 3.3792
+  },
+  {
+    "id": "GLB-016",
+    "name": "Sydney",
+    "country": "Australia",
+    "lat": -33.8688,
+    "lon": 151.2093
+  },
+  {
+    "id": "GLB-017",
+    "name": "Buenos Aires",
+    "country": "Argentina",
+    "lat": -34.6037,
+    "lon": -58.3816
+  },
+  {
+    "id": "GLB-018",
+    "name": "Rio de Janeiro",
+    "country": "Brazil",
+    "lat": -22.9068,
+    "lon": -43.1729
+  },
+  {
+    "id": "GLB-019",
+    "name": "Vancouver",
+    "country": "Canada",
+    "lat": 49.2827,
+    "lon": -123.1207
+  },
+  {
+    "id": "GLB-020",
+    "name": "Shanghai",
+    "country": "China",
+    "lat": 31.2304,
+    "lon": 121.4737
+  },
+  {
+    "id": "GLB-021",
+    "name": "Guangzhou",
+    "country": "China",
+    "lat": 23.1291,
+    "lon": 113.2644
+  },
+  {
+    "id": "GLB-022",
+    "name": "Osaka",
+    "country": "Japan",
+    "lat": 34.6937,
+    "lon": 135.5023
+  },
+  {
+    "id": "GLB-023",
+    "name": "Kolkata",
+    "country": "India",
+    "lat": 22.5726,
+    "lon": 88.3639
+  },
+  {
+    "id": "GLB-024",
+    "name": "Karachi",
+    "country": "Pakistan",
+    "lat": 24.8607,
+    "lon": 67.0011
+  },
+  {
+    "id": "GLB-025",
+    "name": "Alexandria",
+    "country": "Egypt",
+    "lat": 31.2001,
+    "lon": 29.9187
+  },
+  {
+    "id": "GLB-026",
+    "name": "Rotterdam",
+    "country": "Netherlands",
+    "lat": 51.9244,
+    "lon": 4.4777
+  },
+  {
+    "id": "GLB-027",
+    "name": "Copenhagen",
+    "country": "Denmark",
+    "lat": 55.6761,
+    "lon": 12.5683
+  },
+  {
+    "id": "GLB-028",
+    "name": "Wellington",
+    "country": "New Zealand",
+    "lat": -41.2865,
+    "lon": 174.7762
+  },
+  {
+    "id": "GLB-029",
+    "name": "Singapore",
+    "country": "Singapore",
+    "lat": 1.3521,
+    "lon": 103.8198
+  },
+  {
+    "id": "GLB-030",
+    "name": "Cape Town",
+    "country": "South Africa",
+    "lat": -33.9249,
+    "lon": 18.4241
+  }
+]

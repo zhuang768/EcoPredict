@@ -602,8 +602,8 @@
 </header>
 
 <main>
-  <!-- Map -->
-  <div id="map" role="application" aria-label="Taiwan flood risk map"></div>
+  <!-- MAP CONTAINER -->
+  <div id="map" role="application" aria-label="Global flood risk map"></div>
 
   <div id="sidebar-wrap">
     <!-- Rainfall Scale Ruler -->
@@ -754,8 +754,8 @@ function dispatchSMS() {
 // ── Map Initialization ──
 function initMap() {
   map = L.map('map', {
-    center: [23.8, 121.0],
-    zoom: 8,
+    center: [20.0, 0.0],
+    zoom: 3,
     zoomControl: true,
     attributionControl: true,
   });

@@ -1,22 +1,15 @@
-""" """
-
-from __future__ import annotations
-
 import logging
 import os
 from pathlib import Path
-from typing import Optional
-
 import numpy as np
 import pandas as pd
-import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -24,170 +17,77 @@ RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
 PROCESSED_DIR = Path(__file__).resolve().parents[1] / "data" / "processed"
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-_DEMO_TOKEN = "rdec-key-123-45678-011121314"
-_CWA_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
 
-
-def _load_latest_csv(pattern: str) -> pd.DataFrame:
-    """ """
-    files = sorted(RAW_DIR.glob(pattern))
-    if not files:
-        raise FileNotFoundError(
-            f"Cannot find data/raw/{pattern}. Run data_fetcher.py first."
-        )
-    path = files[-1]
+def _load_csv(filename: str) -> pd.DataFrame:
+    path = RAW_DIR / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Cannot find data/raw/{filename}. Run data_fetcher.py first.")
     logger.info("Loading %s", path.name)
     return pd.read_csv(path)
 
-
-def _haversine_km(lat1: np.ndarray, lon1: np.ndarray,
-                   lat2: float, lon2: float) -> np.ndarray:
-    """ """
-    R = 6371.0
-    phi1, phi2 = np.radians(lat1), np.radians(lat2)
-    dphi = np.radians(lat2 - lat1)
-    dlam = np.radians(lon2 - lon1)
-    a = np.sin(dphi / 2) ** 2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlam / 2) ** 2
-    return R * 2 * np.arcsin(np.sqrt(a))
-
-
-def get_typhoon_status() -> bool:
-    """ """
-    token = os.getenv("CWA_API_TOKEN", _DEMO_TOKEN)
-    try:
-        resp = requests.get(
-            f"{_CWA_BASE}/W-C0034-001",
-            params={"Authorization": token, "format": "JSON"},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        records = resp.json().get("records", {}).get("info", [])
-        for item in records:
-            urgency = item.get("urgency", "Past")
-            if urgency in ("Immediate", "Expected"):
-                logger.info("Valid typhoon warning detected: urgency=%s", urgency)
-                return True
-        logger.info("No valid typhoon warning (latest is Past or missing)")
-        return False
-    except Exception as exc:
-        logger.warning("Typhoon API call failed (%s), defaulting to is_typhoon_period=False", exc)
-        return False
-
-
-def _compute_forecast_features(
-    station_lat: float,
-    station_lon: float,
-    forecast_df: pd.DataFrame,
-    now_utc: pd.Timestamp,
-) -> dict:
-    """ """
-    townships = forecast_df[["township", "lat", "lon"]].drop_duplicates("township")
-    dists = _haversine_km(
-        townships["lat"].values, townships["lon"].values,
-        station_lat, station_lon,
-    )
-    nearest_name = townships.iloc[np.argmin(dists)]["township"]
-    t_fc = forecast_df[forecast_df["township"] == nearest_name].copy()
-    t_fc["start_time"] = pd.to_datetime(t_fc["start_time"], utc=True)
-
-    future_fc = t_fc[t_fc["start_time"] >= now_utc]
-
-    h24 = future_fc[future_fc["start_time"] < now_utc + pd.Timedelta(hours=24)]
-    h48 = future_fc[future_fc["start_time"] < now_utc + pd.Timedelta(hours=48)]
-
-    return {
-        "forecast_pop_avg_24h": round(h24["pop_3h"].mean(), 1) if len(h24) else np.nan,
-        "forecast_pop_avg_48h": round(h48["pop_3h"].mean(), 1) if len(h48) else np.nan,
-        "nearest_forecast_township": nearest_name,
-    }
-
-
 def _make_label(row: pd.Series) -> int:
-    """ """
-    r24 = row.get("rain_24h", 0) or 0
-    r3  = row.get("rain_3h", 0) or 0
+    # A simple deterministic rule to generate labels for our ML model to train on
+    # In reality this would be historical disaster labels.
+    r24 = row.get("rain_24hr", 0) or 0
     r3d = row.get("rain_3days", 0) or 0
     r1  = row.get("rain_1h", 0) or 0
-    alt = row.get("altitude", 0) or 0
+    pop48 = row.get("forecast_pop_avg_48h", 0) or 0
 
-    if r24 >= 200:
-        return 1
-    if r3 >= 80:
-        return 1
-    if r3d >= 130 and alt >= 300:
-        return 1
-    if r1 >= 40:
-        return 1
+    if r24 >= 150: return 1
+    if r3d >= 200: return 1
+    if r1 >= 30: return 1
+    # Adding a slight synthetic threshold to get some positive labels globally
+    if r24 >= 50 and pop48 >= 60: return 1
     return 0
 
-
 def build_features(save: bool = True) -> pd.DataFrame:
-    """ """
-    rainfall_df = _load_latest_csv("rainfall_realtime_*.csv")
-    forecast_df = _load_latest_csv("township_forecast_*.csv")
+    obs_df = _load_csv("current_obs.csv")
+    forecast_df = _load_csv("county_forecast.csv")
 
-    rainfall_df["obs_time"] = pd.to_datetime(rainfall_df["obs_time"], utc=True)
-    now_utc = rainfall_df["obs_time"].max()
+    obs_df["obs_time"] = pd.to_datetime(obs_df["obs_time"], utc=True)
+    forecast_df["fcst_time"] = pd.to_datetime(forecast_df["fcst_time"], utc=True)
+
+    now_utc = obs_df["obs_time"].max()
     logger.info("Observation time baseline (UTC): %s", now_utc)
 
-    is_typhoon = int(get_typhoon_status())
-    logger.info("is_typhoon_period = %s", bool(is_typhoon))
+    # Calculate forecast PoP averages
+    future_fc = forecast_df[forecast_df["fcst_time"] >= now_utc]
+    
+    # Group by county to get average PoP
+    h24 = future_fc[future_fc["fcst_time"] < now_utc + pd.Timedelta(hours=24)]
+    h48 = future_fc[future_fc["fcst_time"] < now_utc + pd.Timedelta(hours=48)]
+
+    pop24_map = h24.groupby("county")["pop_percent"].mean().to_dict()
+    pop48_map = h48.groupby("county")["pop_percent"].mean().to_dict()
 
     rows = []
-    total = len(rainfall_df)
-    for i, station in rainfall_df.iterrows():
+    for _, station in obs_df.iterrows():
         lat = station.get("lat")
         lon = station.get("lon")
-
         if pd.isna(lat) or pd.isna(lon):
             continue
 
-        try:
-            fc_feats = _compute_forecast_features(lat, lon, forecast_df, now_utc)
-        except Exception:
-            fc_feats = {
-                "forecast_pop_avg_24h": np.nan,
-                "forecast_pop_avg_48h": np.nan,
-                "nearest_forecast_township": None,
-            }
-
+        c_name = station["county"]
         row = {
             "station_id":   station["station_id"],
             "station_name": station["station_name"],
-            "county":       station.get("county"),
+            "county":       c_name,
             "town":         station.get("town"),
             "lat":          lat,
             "lon":          lon,
-            "altitude":     station.get("altitude"),
             "obs_time":     now_utc,
 
-            "rain_1h":            station.get("rainfall_1hr"),
-            "rain_3h":            station.get("rainfall_3hr"),
-            "rain_6h":            station.get("rainfall_6hr"),
-            "rain_12h":           station.get("rainfall_12hr"),
-            "rain_24h":           station.get("rainfall_24hr"),
-            "rain_2days":         station.get("rainfall_2days"),
-            "rain_3days":         station.get("rainfall_3days"),
+            "rain_1h":            station.get("rain_1h", 0),
+            "rain_24h":           station.get("rain_24hr", 0),
+            "rain_3days":         station.get("rain_3days", 0),
 
-            "rain_intensity_max": station.get("rainfall_10min"),
-
-            "forecast_pop_avg_24h": fc_feats["forecast_pop_avg_24h"],
-            "forecast_pop_avg_48h": fc_feats["forecast_pop_avg_48h"],
-            "nearest_forecast_township": fc_feats["nearest_forecast_township"],
-
-            "is_typhoon_period": is_typhoon,
-
-            "distance_to_debris_flow_km": np.nan,
-            "flood_potential_level":      np.nan,
+            "forecast_pop_avg_24h": round(pop24_map.get(c_name, 0.0), 1),
+            "forecast_pop_avg_48h": round(pop48_map.get(c_name, 0.0), 1),
         }
         rows.append(row)
 
     df = pd.DataFrame(rows)
-
-    rain_cols = ["rain_1h", "rain_3h", "rain_6h", "rain_12h",
-                 "rain_24h", "rain_2days", "rain_3days", "rain_intensity_max"]
-    df[rain_cols] = df[rain_cols].fillna(0.0)
-
+    df.fillna(0.0, inplace=True)
     df["label"] = df.apply(_make_label, axis=1)
 
     pos = df["label"].sum()
@@ -195,12 +95,6 @@ def build_features(save: bool = True) -> pd.DataFrame:
     logger.info(
         "Feature table complete: %d rows (Positive label=1: %d / %.1f%%, Negative: %d)",
         len(df), pos, 100 * pos / len(df), neg,
-    )
-    logger.info(
-        "rain_3days dist: min=%.1f, q25=%.1f, q50=%.1f, q75=%.1f, max=%.1f",
-        df["rain_3days"].min(), df["rain_3days"].quantile(0.25),
-        df["rain_3days"].quantile(0.50), df["rain_3days"].quantile(0.75),
-        df["rain_3days"].max(),
     )
 
     if save:
@@ -210,12 +104,9 @@ def build_features(save: bool = True) -> pd.DataFrame:
 
     return df
 
-
 if __name__ == "__main__":
     df = build_features(save=True)
     print("\n[Feature Table Summary]")
-    print(df[["station_name", "county", "rain_24h", "rain_3days",
-              "forecast_pop_avg_24h", "is_typhoon_period", "label"]].head(10).to_string(index=False))
+    print(df[["station_name", "rain_24h", "rain_3days", "forecast_pop_avg_48h", "label"]].head(10).to_string(index=False))
     print(f"\nTotal stations: {len(df)}")
     print(f"Positive (label=1): {df['label'].sum()} ({100*df['label'].mean():.1f}%)")
-    print(f"Feature columns: {[c for c in df.columns if c not in ['station_id','station_name','county','town','obs_time','nearest_forecast_township']]}")
