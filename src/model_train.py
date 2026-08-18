@@ -26,36 +26,16 @@ FEATURE_COLS = [
 ]
 
 def train_models():
-    features_path = PROCESSED_DIR / "features.csv"
+    features_path = PROCESSED_DIR / "historical_features.csv"
     if not features_path.exists():
-        raise FileNotFoundError("features.csv does not exist, run feature_engineering.py first.")
+        raise FileNotFoundError("historical_features.csv does not exist, run fetch_historical_data.py first.")
 
     df = pd.read_csv(features_path)
-    logger.info("Loaded features.csv: %d rows", len(df))
+    logger.info("Loaded historical_features.csv: %d rows", len(df))
 
     # In a real scenario we split by time. Here we split randomly for demo.
     X = df[FEATURE_COLS]
     y = df["label"]
-
-    # Since it's a small dataset (30 cities), and potentially no positive samples depending on weather:
-    if y.sum() == 0:
-        logger.warning("No positive samples! Injecting synthetic samples to prevent training crash.")
-        # Inject synthetic positive sample
-        syn_X = pd.DataFrame([{
-            "rain_1h": 50, "rain_24h": 200, "rain_3days": 300, 
-            "forecast_pop_avg_24h": 90, "forecast_pop_avg_48h": 90
-        }] * 5) # Create 5 positive samples
-        syn_y = pd.Series([1] * 5)
-        X = pd.concat([X, syn_X], ignore_index=True)
-        y = pd.concat([y, syn_y], ignore_index=True)
-        
-        syn_X2 = pd.DataFrame([{
-            "rain_1h": 0, "rain_24h": 0, "rain_3days": 0, 
-            "forecast_pop_avg_24h": 0, "forecast_pop_avg_48h": 0
-        }] * 5) # Create 5 negative samples
-        syn_y2 = pd.Series([0] * 5)
-        X = pd.concat([X, syn_X2], ignore_index=True)
-        y = pd.concat([y, syn_y2], ignore_index=True)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 

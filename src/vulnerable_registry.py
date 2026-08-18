@@ -1,7 +1,3 @@
-""" """
-
-from __future__ import annotations
-
 import json
 import logging
 from dataclasses import dataclass
@@ -10,28 +6,18 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-REGISTRY_PATH = (
-    Path(__file__).resolve().parents[1] / "data" / "care_list" / "vulnerable_registry.json"
-)
-
+REGISTRY_PATH = Path(__file__).resolve().parents[1] / "data" / "care_list" / "vulnerable_registry.json"
 
 @dataclass
-class VulnerablePerson:
+class Facility:
     id: str
     code_name: str
     county: str
     town: str
     community: str
-    is_living_alone: bool
-    is_mobility_impaired: bool
-    age_group: str
+    is_priority: bool
     emergency_contact: str
     notes: str
-
-    @property
-    def is_priority(self) -> bool:
-        """ """
-        return self.is_living_alone or self.is_mobility_impaired
 
     def to_dict(self) -> dict:
         return {
@@ -40,35 +26,21 @@ class VulnerablePerson:
             "county": self.county,
             "town": self.town,
             "community": self.community,
-            "is_living_alone": self.is_living_alone,
-            "is_mobility_impaired": self.is_mobility_impaired,
-            "age_group": self.age_group,
+            "is_priority": self.is_priority,
             "emergency_contact": self.emergency_contact,
             "notes": self.notes,
-            "is_priority": self.is_priority,
         }
 
-
 class VulnerableRegistry:
-    """ """
-
     def __init__(self, path: Path = REGISTRY_PATH) -> None:
         if not path.exists():
-            raise FileNotFoundError(f"Care registry not found: {path}")
+            raise FileNotFoundError(f"Registry not found: {path}")
         with open(path, encoding="utf-8") as f:
             raw = json.load(f)
-        self._records: list[VulnerablePerson] = [
-            VulnerablePerson(**r) for r in raw["records"]
-        ]
-        logger.info("Loaded care registry: %d records", len(self._records))
+        self._records: list[Facility] = [Facility(**r) for r in raw["records"]]
+        logger.info("Loaded infrastructure registry: %d records", len(self._records))
 
-    def query(
-        self,
-        county: Optional[str] = None,
-        town: Optional[str] = None,
-        priority_only: bool = False,
-    ) -> list[VulnerablePerson]:
-        """ """
+    def query(self, county: Optional[str] = None, town: Optional[str] = None, priority_only: bool = False) -> list[Facility]:
         results = self._records
         if county:
             results = [p for p in results if p.county == county]
@@ -78,33 +50,11 @@ class VulnerableRegistry:
             results = [p for p in results if p.is_priority]
         return results
 
-    def query_by_station_area(
-        self, county: str, town: str
-    ) -> list[VulnerablePerson]:
-        """ """
-        return self.query(county=county)
-
     @property
-    def all_records(self) -> list[VulnerablePerson]:
+    def all_records(self) -> list[Facility]:
         return list(self._records)
-
-    def summary(self) -> dict:
-        return {
-            "total": len(self._records),
-            "living_alone": sum(1 for p in self._records if p.is_living_alone),
-            "mobility_impaired": sum(1 for p in self._records if p.is_mobility_impaired),
-            "priority": sum(1 for p in self._records if p.is_priority),
-            "counties": sorted({p.county for p in self._records}),
-        }
-
 
 if __name__ == "__main__":
     reg = VulnerableRegistry()
-    print("[Care Registry Statistics]")
-    s = reg.summary()
-    for k, v in s.items():
-        print(f"  {k}: {v}")
-
-    print("\n[Taipei City Query Results]")
-    for p in reg.query(county="Taipei City", priority_only=True):
-        print(f"  [{p.id}] {p.code_name} - {p.town} {p.community} | Priority:{p.is_priority}")
+    print("[Registry Statistics]")
+    print(f"Total Facilities: {len(reg.all_records)}")
