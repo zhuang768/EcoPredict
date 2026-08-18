@@ -547,8 +547,8 @@
     .btn-view-care-list:hover { background: var(--c-severe); color: #fff; }
 
     /* ── Satellite Map Adjustments ── */
-    .dark-basemap {
-      filter: brightness(0.9) contrast(1.05);
+    .dark-topo {
+      filter: brightness(0.5) contrast(1.15) saturate(0.5);
     }
 </style>
 </head>
@@ -765,7 +765,8 @@ function initMap() {
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri',
     subdomains: 'abcd',
-    maxZoom: 19
+    maxZoom: 19,
+    className: 'dark-topo'
   }).addTo(map);
 
   // Radar Overlay (RainViewer)
